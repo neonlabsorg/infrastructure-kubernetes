@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: proxy-config
+  namespace: {{ .Release.Namespace }}
+type: Opaque
+data:
+  PROXY_COUNT: {{ .Values.proxyCount | toString | b64enc | quote }}
+  KEYS_PER_PROXY: {{ .Values.keysPerProxy | toString | b64enc | quote }}

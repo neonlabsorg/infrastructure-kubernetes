@@ -1,0 +1,50 @@
+### Requirements for proxy-operator
+
+Kubernetes Cluster:
+
+- 8 vcpu and 16GB RAM.
+- At least 200GB disk space.
+- Kubernetes already installed.
+- Helm 3, Kubectl
+
+### Environments setup
+
+Copy and set variables in config file
+    
+    cp config.ini.sample config.ini
+
+
+
+### Operator keys
+
+Copy your public keys on operator-keypairs path.
+
+
+### Run setup
+
+You can set some important variabels in command line;
+
+    -f, Variabels file
+    -i, Init setup 
+    -S, SOLANA_URL 
+    -s, PP_SOLANA_URL 
+    -e, Set environment ("devnet", "testnet" or "mainnet")  
+    -d, Postgres password
+    -m, Use this option to set migrations
+    -k, operator kyes dir
+    -y, Assume "yes" as answer, run non-interactively
+
+First setup you need run with -i key
+
+### Testing
+
+If your applications are up and running, just forward the proxy port for connectivity tests:
+
+    kubectl port-forward pod/neon-proxy-0 9090:9090 --namespace neon-proxy
+    
+    ❯ curl localhost:9090/solana
+    {"jsonrpc": "2.0", "error": {"code": -32000, "message": "'NoneType' object has no attribute 'decode'"}}%  
+   
+
+
+

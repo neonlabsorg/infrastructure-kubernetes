@@ -1,0 +1,28 @@
+{{- if .Values.postgres.enabled -}}
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ .Release.Namespace }}-postgres-persistent-volume
+spec:
+  storageClassName: {{ .Values.persistence.storageClassName }}
+  capacity:
+    storage: {{ .Values.persistence.size }}
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  accessModes:
+    - ReadWriteMany
+  {{- if eq .Values.persistence.storageClassName "host" }}
+  hostPath:
+    path: "{{ .Values.persistence.hostPath }}/{{ .Release.Namespace }}/"
+  {{- end -}}
+  {{- if eq .Values.persistence.storageClassName "efs" }}
+  csi:
+    driver: {{ .Values.efsDriver.name }}
+    volumeHandle: {{ .Values.efsDriver.efsId }}
+  {{- end -}}
+  {{- if eq .Values.persistence.storageClassName "scw-bssd" }}
+  csi:
+    driver: {{ .Values.efsDriver.name }}
+    volumeHandle: {{ .Values.efsDriver.efsId }}
+  {{- end -}}
+{{- end }}

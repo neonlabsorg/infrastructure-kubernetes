@@ -1,0 +1,45 @@
+injector:
+  enabled: true
+
+environment: ""
+
+server:
+  image:
+    repository: "hashicorp/vault"
+    tag: "1.11.2"
+    pullPolicy: IfNotPresent
+  logLevel: "info"
+  logFormat: "json"
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 250m
+    limits:
+      memory: 256Mi
+      cpu: 250m
+
+
+  extraSecretEnvironmentVars:
+    - envName: POSTGRES_HOST
+      secretName: postgres-secret
+      secretKey: POSTGRES_HOST
+    - envName: POSTGRES_USER
+      secretName: postgres-secret
+      secretKey: POSTGRES_USER
+    - envName: POSTGRES_PASSWORD
+      secretName: postgres-secret
+      secretKey: POSTGRES_PASSWORD
+
+
+  dataStorage:
+    enabled: false
+  dev:
+    enabled: false
+    devRootToken: "root"
+  standalone:
+    enabled: false
+  ha:
+    enabled: false
+    replicas: 2
+    apiAddr: null
+

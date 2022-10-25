@@ -1,0 +1,80 @@
+global:
+  enabled: true
+
+clusterType: "localhost"
+environment: ""
+
+postgres:
+  enabled: false
+  host: ""
+  dbName: ""
+  user: ""
+  password: ""
+  ssl: "allow"
+
+migrate:
+  enabled: false
+
+image:
+  repository: "postgres"
+  pullPolicy: "IfNotPresent"
+  tag: "14.0"
+
+service:
+  name: dbport
+  type: ClusterIP
+  port: 5432
+  targetPort: 5432
+  protocol: TCP
+  labels: {}
+
+
+# extraPorts:
+#   - name: 
+#     containerPort: 
+#     protocol: 
+
+persistence:
+  size: "50Gi"
+  storageClassName: "host"
+  hostPath: "/data/postgresql/"
+
+efsDriver:
+  name: "efs.csi.aws.com"
+  efsId: ""
+
+env:
+  - name: MAX_CONNECTIONS
+    value: "1000"
+
+
+POSTGRES_ADMIN_USER: "postgres"
+POSTGRES_ADMIN_PASSWD: ""
+
+envFrom:
+  - secretRef: 
+      name: postgres-secret
+
+volumeMounts:
+  - name: postgres-config
+    mountPath: /var/lib/postgresql/init_scripts/neon-db.sql
+    subPath: neon-db.sql
+  - name: postgres-config
+    mountPath: /var/lib/postgresql/init_scripts/vault.sql
+    subPath: vault.sql
+  - name: postgresdata
+    mountPath: /var/lib/postgresql/data/
+
+    
+volumes:
+  - name: postgres-config
+    configMap:
+      name: postgres-config
+
+
+
+
+annotations: {}
+labels: {}
+podAnnotations: {}
+podLabels: {}

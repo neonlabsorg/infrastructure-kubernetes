@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: proxy-keys-script
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "neon-proxy.labels" . | nindent 4 }}
+data: 
+  get_keys.sh: |
+    #!/bin/bash
+    RAW=$(cat /vault/secrets/operator-kyes | grep $HOSTNAME | awk '{$1=""}1')
+    OP_KEYS=($RAW)
+    i=0; for a in "${OP_KEYS[@]}"; do let i++; echo "$a" > /root/.config/solana/id$i.json; done
+    mv /root/.config/solana/id1.json /root/.config/solana/id.json

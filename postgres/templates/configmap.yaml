@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "postgres.labels" . | nindent 4 }}
+data:
+  neon-db.sql: {{ tpl (.Files.Get "files/neon-db.sql") . | quote }}
+  vault.sql: {{ tpl (.Files.Get "files/vault.sql") . | quote }}

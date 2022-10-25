@@ -1,0 +1,101 @@
+proxyCount: 1
+keysPerProxy: 2
+
+clusterType: "localhost"
+environment: devnet
+
+ingress:
+  enabled: true
+  className: "nginx"
+  host: ""
+
+
+image:
+  repository: neonlabsorg/proxy
+  pullPolicy: IfNotPresent
+  tag: "v0.11.2"
+
+# imageTools:
+#   repository: neonlabsorg/dops-tools
+#   pullPolicy: IfNotPresent
+#   tag: "latest"
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: "neon-proxy-sa"
+
+podAnnotations: {}
+
+service:
+  name: proxy-svc
+  type: ClusterIP
+  sessionAffinity: ClientIP
+  clusterIP: None
+  port: 9090
+  protocol: TCP
+  labels: {}
+
+extraPorts:
+  - port: 9092
+    containerPort: 9092
+    protocol: TCP
+    name: service-port
+  - port: 8888
+    containerPort: 8888
+    protocol: TCP
+    name: exporter
+
+envFrom:
+  - secretRef: 
+      name: postgres-secret
+
+proxyEnv: {}
+
+solanaUrl: ""
+ppsolanaUrl: ""
+
+FAUCET_URL: ""
+PROXY_URL: ""
+LOG_NEON_CLI_DEBUG: ""
+FUZZING_BLOCKHASH: ""
+LOG_FULL_OBJECT_INFO: ""
+CONFIG: ""
+PYTH_MAPPING_ACCOUNT: ""
+MIN_OPERATOR_BALANCE_TO_WARN: ""
+MIN_OPERATOR_BALANCE_TO_ERR: ""
+MINIMAL_GAS_PRICE: ""
+ENABLE_PRIVATE_AP: ""
+ALLOW_UNDERPRICED_TX_WITHOUT_CHAINID: ""
+EVM_LOADER: ""
+NEON_CLI_TIMEOUT: ""
+CONFIRM_TIMEOUT: ""
+
+volumes: 
+  - name: proxy-keys-script
+    configMap:
+      name: proxy-keys-script
+      defaultMode: 0777
+
+volumeMounts: 
+  - name: proxy-keys-script
+    mountPath: /root/.config/solana/scripts/get_keys.sh
+    subPath: get_keys.sh
+
+indexer:
+  service:
+    name: indexer-svc
+    type: ClusterIP
+    port: 8887
+    protocol: TCP
+  LOG_FULL_OBJECT_INFO: ""
+  GATHER_STATISTICS: ""
+  labels: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  podAnnotations: {}
+
+
+
+

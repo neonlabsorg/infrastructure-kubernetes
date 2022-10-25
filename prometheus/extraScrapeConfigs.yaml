@@ -1,0 +1,19 @@
+- job_name: 'proxy'
+  honor_timestamps: true
+  scrape_interval: 5s
+  scrape_timeout: 5s
+  metrics_path: /proxy1
+  scheme: http
+  static_configs:
+  - targets:
+    - proxy-svc.neon-proxy.svc.cluster.local:8888
+
+- job_name: 'indexer'
+  honor_timestamps: true
+  scrape_interval: 5s
+  scrape_timeout: 5s
+  metrics_path: /
+  scheme: http
+  static_configs:
+  - targets:
+    - indexer-svc.neon-proxy.svc.cluster.local:8887

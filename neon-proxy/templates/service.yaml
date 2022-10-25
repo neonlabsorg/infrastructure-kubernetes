@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name:  {{ .Values.service.name }}
+  labels:
+    {{- include "neon-proxy.labels" . | nindent 4 }}
+  annotations:
+    cloud.google.com/neg: '{"ingress": true}'    
+spec:
+  type: {{ .Values.service.type }}
+  sessionAffinity: {{ .Values.service.sessionAffinity }}
+  clusterIP: {{ .Values.service.clusterIP }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.port }}
+      protocol: {{ .Values.service.protocol }}
+      name: {{ .Values.service.name }}
+  {{- if .Values.extraPorts }}
+    {{- range .Values.extraPorts }}
+    - name: {{ .name }}
+      targetPort: {{ .name }}
+      protocol: {{ .protocol }}
+      port: {{ .port }}
+      {{- if and (eq $.Values.service.type "NodePort") (.nodePort) }}
+      nodePort: {{ .nodePort }}
+      {{- end }}
+    {{- end }}
+  {{- end }}      
+  selector:
+    {{- include "neon-proxy.selectorLabels" . | nindent 4 }}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: {{ .Values.namespace }}
+  name: {{ .Values.indexer.service.name }}
+  labels:
+    {{- include "neon-proxy.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.indexer.service.type }}
+  sessionAffinity: {{ .Values.indexer.service.sessionAffinity }}
+  clusterIP: {{ .Values.indexer.service.clusterIP }}
+  ports:
+    - port: {{ .Values.indexer.service.port }}
+      targetPort: {{ .Values.indexer.service.port }}
+      protocol: {{ .Values.indexer.service.protocol }}
+      name: {{ .Values.indexer.service.name }}
+  selector:
+    {{- include "neon-proxy.selectorLabels" . | nindent 4 }}
+

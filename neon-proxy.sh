@@ -22,6 +22,7 @@ VAR_FILE="config.ini"
 HELP="\nUsage: $0 [OPTION]...\n
   -f, Variabels file \n
   -i, Init setup \n
+  -r, Read-only mode\n
   -S, SOLANA_URL\n
   -s, PP_SOLANA_URL\n
   -e, Set environment (\"devnet\", \"testnet\" or \"mainnet\") \n
@@ -43,7 +44,8 @@ while getopts ":f:k:n:d:S:s:e:yhmi" opt; do
     e) CLI_P_ENV=${OPTARG} ;;
     y) FORCE_APPLY=1 ;;
     m) DB_MIGRATION="true" ;;  
-    i) FIRST_RUN="true";DB_MIGRATION="true" ;;        
+    i) FIRST_RUN="true";DB_MIGRATION="true" ;;
+    r) CLI_READONLY="true" ;;
     h) echo -e $HELP;exit 0 ;;
     *) echo "Invalid option -$OPTARG" >&2
     exit 1
@@ -70,6 +72,7 @@ done
 
 ## Read *.ini file
 source $VAR_FILE
+ENABLE_SEND_TX_API="YES"
 
 # Set values from a command line
 [ ! $CLI_NAMESPACE ] || NAMESPACE=$CLI_NAMESPACE
@@ -78,6 +81,7 @@ source $VAR_FILE
 [ ! $CLI_PP_SOLANA_URL ] || PP_SOLANA_URL=$CLI_SOLANA_URL
 [ ! $CLI_P_ENV ] || P_ENV=$CLI_P_ENV
 [ ! $CLI_KEY_DIR ] || KEY_DIR=$CLI_KEY_DIR
+[ ! $CLI_READONLY ] || ENABLE_SEND_TX_API="NO"
 
 ## Check variables
 
@@ -351,6 +355,7 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROO
     --set MIN_OPERATOR_BALANCE_TO_ERR=$MIN_OPERATOR_BALANCE_TO_ERR \
     --set MINIMAL_GAS_PRICE=$MINIMAL_GAS_PRICE \
     --set ENABLE_PRIVATE_API=$ENABLE_PRIVATE_API \
+    --set ENABLE_SEND_TX_API=$ENABLE_SEND_TX_API \
     --set ALLOW_UNDERPRICED_TX_WITHOUT_CHAINID=$ALLOW_UNDERPRICED_TX_WITHOUT_CHAINID \
     --set EVM_LOADER=$EVM_LOADER \
     --set NEON_CLI_TIMEOUT=$NEON_CLI_TIMEOUT \

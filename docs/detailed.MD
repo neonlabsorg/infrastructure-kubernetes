@@ -14,13 +14,13 @@
      
 - Hardware recommendations:
 
-        1. For production: 
+		For production: 
         
             - At least two VMs/Servers with Intel Processor x86_64 with:
             - 16vcpu, 32GB of RAM (each server)
             - 1TB of storage
         
-         1. For development/local setup: 
+		For development/local setup: 
         
             - Intel Processor x86_64 with:
             - 8vcpu, 16GB of RAM (each server)
@@ -28,7 +28,7 @@
 
 
 2. In order to install it, you should give access to **github repository**:
- 4. [https://github.com/neonlabsorg/infrastructure-kubernetes](https://github.com/neonlabsorg/infrastructure-kubernetes) 
+  [https://github.com/neonlabsorg/infrastructure-kubernetes](https://github.com/neonlabsorg/infrastructure-kubernetes) 
  
     There are kubernetes install script for local development and work as operators `neon-proxy.sh`, and there it will deploy:
 
@@ -181,7 +181,7 @@ Confirms timeout from proxy to solana connectivity.
         `IDX_LOG_FULL_OBJECT_INFO="NO"
 `
 
-***PostgreSQL*** Database
+4. ***PostgreSQL*** Database
 
       Database options offer two methods of connectivity:
       
@@ -217,7 +217,7 @@ If you want to choose your password, please set `POSTGRES_PASSWORD`.
 
 **Disclaimer**: For production environments, we recommend external PostgreSQL databases such as AWS RDS, GCP CLoudSQL or your database install.
 
-   ***VAULT***
+ 5.  ***VAULT***
      This setup includes a hashicorp vault that will store your private keys in a secure standard.
     `VAULT_TYPE="dev"`
     

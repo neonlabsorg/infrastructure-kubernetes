@@ -33,7 +33,7 @@ HELP="\nUsage: $0 [OPTION]...\n
   "
 
 ## Get options
-while getopts ":f:k:n:d:S:s:e:yhmi" opt; do
+while getopts ":f:k:n:d:S:s:e:yhmir" opt; do
   case $opt in
     f) VAR_FILE=${OPTARG} ;;
     k) CLI_KEY_DIR=${OPTARG} ;;

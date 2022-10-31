@@ -48,7 +48,7 @@ If your applications are up and running, just forward the proxy port for connect
     ❯ curl localhost:9090/solana
     {"jsonrpc": "2.0", "error": {"code": -32000, "message": "'NoneType' object has no attribute 'decode'"}}%  
     
-Please check detailed parameters in our doc directory.
+Please check detailed parameters in our docs directory.
    
 
 

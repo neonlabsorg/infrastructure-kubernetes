@@ -25,7 +25,8 @@ Copy your public keys on operator-keypairs path.
 You can set some important variabels in command line;
 
     -f, Variabels file
-    -i, Init setup 
+    -i, Init setup
+    -r, Read-only mode
     -S, SOLANA_URL 
     -s, PP_SOLANA_URL 
     -e, Set environment ("devnet", "testnet" or "mainnet")  

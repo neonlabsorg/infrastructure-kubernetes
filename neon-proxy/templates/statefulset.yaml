@@ -83,6 +83,8 @@ spec:
             value: {{ .Values.MINIMAL_GAS_PRICE | squote }}
           - name: ENABLE_PRIVATE_API
             value: {{ .Values.ENABLE_PRIVATE_API | squote }}
+          - name: ENABLE_SEND_TX_API
+            value: {{ .Values.ENABLE_SEND_TX_API | squote }}
           - name: ALLOW_UNDERPRICED_TX_WITHOUT_CHAINID 
             value: {{ .Values.ALLOW_UNDERPRICED_TX_WITHOUT_CHAINID | squote }}
           - name: EVM_LOADER

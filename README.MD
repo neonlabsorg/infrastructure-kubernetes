@@ -4,7 +4,7 @@ Kubernetes Cluster:
 
 - 8 vcpu and 16GB RAM.
 - At least 200GB disk space.
-- Kubernetes already installed.
+- Kubernetes already installed (at least 1.21)
 - Helm 3, Kubectl
 
 ### Environments setup
@@ -23,6 +23,8 @@ Copy your public keys on operator-keypairs path.
 ### Run setup
 
 You can set some important variabels in command line;
+
+#./neon-proxy.sh -h
 
     -f, Variabels file
     -i, Init setup

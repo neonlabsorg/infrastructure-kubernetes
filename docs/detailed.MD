@@ -241,6 +241,7 @@ The first install generates ***vault-keys.json*** file containing values for `VA
 
 For further installs/updates, please set this field and uncomment from previewed json file generated on first setup
 `#VAULT_ROOT_TOKEN=`
+
 `#VAULT_UNSEAL_KEY=`
 
 DEV_TOKEN is a simple token for development environments only.

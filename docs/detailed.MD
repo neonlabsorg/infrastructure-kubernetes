@@ -131,40 +131,40 @@
 
    ***PROXY ENVS***
    
-    `PRX_FAUCET_URL="http://faucet-test:3344"`
+    PRX_FAUCET_URL="http://faucet-test:3344"
 Internal name inside your namespace that calls faucet #application (only local development and devnet).
 
-    `PRX_PROXY_URL="http://neon-proxy:9090/solana"`
+    PRX_PROXY_URL="http://neon-proxy:9090/solana"
 Address of local neon-proxy that resides inside in your #namespace service.
 
-    `PRX_LOG_NEON_CLI_DEBUG="YES"`
+    PRX_LOG_NEON_CLI_DEBUG="YES"
 For debug purposes this value print in the log information #from neon cli.
 
-    `PRX_FUZZING_BLOCKHASH="NO"`
+    PRX_FUZZING_BLOCKHASH="NO"
     
-    `PRX_LOG_FULL_OBJECT_INFO="YES"`
+    PRX_LOG_FULL_OBJECT_INFO="YES"
     
-    `PRX_CONFIG="CI"`
+    PRX_CONFIG="CI"
 
-    `PRX_PYTH_MAPPING_ACCOUNT=""`
+    PRX_PYTH_MAPPING_ACCOUNT=""
     
     This setting uses a pyth network account in order to get solana current currency.
     
-    `PRX_MIN_OPERATOR_BALANCE_TO_WARN="4565760000"`
-`(?)`
-`PRX_MIN_OPERATOR_BALANCE_TO_ERR="913152000"`
-`(?)`
+    PRX_MIN_OPERATOR_BALANCE_TO_WARN="4565760000"
+    
+    PRX_MIN_OPERATOR_BALANCE_TO_ERR="913152000"
 
-    `PRX_MINIMAL_GAS_PRICE="1"`
+
+    PRX_MINIMAL_GAS_PRICE="1"
 Lowest fee for gas price.
 
-    `PRX_ENABLE_PRIVATE_API="YES"`
+    PRX_ENABLE_PRIVATE_API="YES"
 Allow use of private apis.
 
-    `PRX_ALLOW_UNDERPRICED_TX_WITHOUT_CHAINID="YES"`
-`(?)`
+    PRX_ALLOW_UNDERPRICED_TX_WITHOUT_CHAINID="YES"
 
-    `PRX_EVM_LOADER=""`
+
+    PRX_EVM_LOADER=""
 Set defaults the following values for the variable PRX_EVM_LOADER (for local install only) :
     
 | CONFIG | EVM_LOADER | 
@@ -174,17 +174,18 @@ Set defaults the following values for the variable PRX_EVM_LOADER (for local ins
 | local | n/a | 
 
 
-`PRX_NEON_CLI_TIMEOUT="10"`
+    PRX_NEON_CLI_TIMEOUT="10"
 Set timeout from proxy to solana connectivity.
 
-`PRX_CONFIRM_TIMEOUT="15"`
+    PRX_CONFIRM_TIMEOUT="15"
 Confirms timeout from proxy to solana connectivity.
 
 
    ***INDEXER*** ENVS
-        `IDX_GATHER_STATISTICS="YES"`
+   
+   	IDX_GATHER_STATISTICS="YES"
 	
-        `IDX_LOG_FULL_OBJECT_INFO="NO"
+        IDX_LOG_FULL_OBJECT_INFO="NO"
 
 
 4. ***PostgreSQL*** Database

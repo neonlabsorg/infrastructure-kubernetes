@@ -26,25 +26,27 @@ HELP="\nUsage: $0 [OPTION]...\n
   -S, SOLANA_URL\n
   -s, PP_SOLANA_URL\n
   -e, Set environment (\"devnet\", \"testnet\" or \"mainnet\") \n
-  -d, Postgres password\n
+  -p, Set postgres admin password (can be used only with -i option) \n
+  -v, Set vault root token (experemental) \n  
   -m, Use this option to set migrations\n
-  -k, operator kyes dir \n
+  -k, Set keys directory \n
   -y, Assume \"yes\" as answer, run non-interactively \n
   "
 
 ## Get options
-while getopts ":f:k:n:d:S:s:e:yhmir" opt; do
+while getopts ":f:k:n:p:v:S:s:e:yhmi" opt; do
   case $opt in
     f) VAR_FILE=${OPTARG} ;;
     k) CLI_KEY_DIR=${OPTARG} ;;
     n) CLI_NAMESPACE=${OPTARG}`` ;;  
-    d) CLI_POSTGRES_PASSWORD=${OPTARG} ;;
+    p) CLI_POSTGRES_PASSWORD=${OPTARG} ;;
+    v) CLI_VAULT_ROOT_TOKEN=${OPTARG} ;;    
     S) CLI_SOLANA_URL=${OPTARG} ;;
     s) CLI_PP_SOLANA_URL=${OPTARG} ;;
     e) CLI_P_ENV=${OPTARG} ;;
     y) FORCE_APPLY=1 ;;
     m) DB_MIGRATION="true" ;;  
-    i) FIRST_RUN="true";DB_MIGRATION="true" ;;
+    i) FIRST_RUN="true";DB_MIGRATION="true" ;;        
     r) CLI_READONLY="true" ;;
     h) echo -e $HELP;exit 0 ;;
     *) echo "Invalid option -$OPTARG" >&2
@@ -72,11 +74,14 @@ done
 
 ## Read *.ini file
 source $VAR_FILE
-ENABLE_SEND_TX_API="YES"
+PROXY_ENV=$(grep -Po 'PRX_\K.*' $VAR_FILE)
+INDEXER_ENV=$(grep -Po 'IDX_\K.*' $VAR_FILE)
+
 
 # Set values from a command line
 [ ! $CLI_NAMESPACE ] || NAMESPACE=$CLI_NAMESPACE
 [ ! $CLI_POSTGRES_PASSWORD ] || POSTGRES_ADMIN_PASSWD=$CLI_POSTGRES_PASSWORD
+[ ! $CLI_VAULT_ROOT_TOKEN ] || VAULT_ROOT_TOKEN=$CLI_VAULT_ROOT_TOKEN
 [ ! $CLI_SOLANA_URL ] || SOLANA_URL=$CLI_SOLANA_URL
 [ ! $CLI_PP_SOLANA_URL ] || PP_SOLANA_URL=$CLI_SOLANA_URL
 [ ! $CLI_P_ENV ] || P_ENV=$CLI_P_ENV
@@ -84,6 +89,12 @@ ENABLE_SEND_TX_API="YES"
 [ ! $CLI_READONLY ] || ENABLE_SEND_TX_API="NO"
 
 ## Check variables
+[ $FIRST_RUN ] || kubectl get ns $NAMESPACE || {
+  echo "Please run with -i opton"
+  echo -e $HELP
+  exit 1
+}
+
 
 [ ! -z $P_ENV ] || {
   echo "ERROR: Environment don't set. Check $VAR_FILE (P_ENV=...) or set with -e option "
@@ -132,14 +143,14 @@ for k in $(awk '{print}' $KEY_DIR/$KEY_MASK );do OPERATOR_KEYS+=($k);done
   exit 1
 }
 
-[[ $P_ENV = "devnet" ]] || [[ $VAULT_KEY_SHARED && $VAULT_KEY_THRESHOLD ]] || {
+[[ $VAULT_TYPE = "dev" ]] || [[ $VAULT_KEY_SHARED && $VAULT_KEY_THRESHOLD ]] || {
     echo -e "ERROR: Vault can't be run in \"$P_ENV\" environment without options. Check $VAR_FILE:\n
     VAULT_KEY_SHARED=$VAULT_KEY_SHARED
     VAULT_KEY_THRESHOLD=$VAULT_KEY_THRESHOLD\n"
     exit 1 
 }
 
-[[ $P_ENV = "devnet" ]] || [[ -f "$VAULT_KEYS_FILE" && -s "$VAULT_KEYS_FILE" ]] || {
+[[ $VAULT_TYPE = "dev" ]] || [[ -f "$VAULT_KEYS_FILE" && -s "$VAULT_KEYS_FILE" ]] || {
   echo -e "\n###################\n"
   echo -e "WARNING: $VAULT_KEYS_FILE not found or file is empty! Vault will try to init storage!"
   echo -e "\n###################\n"
@@ -168,14 +179,14 @@ function installVault() {
   then
     VAULT_ROOT_TOKEN=$VAULT_DEV_TOKEN
     helm upgrade --install --atomic vault hashicorp/vault -f vault/values.yaml \
-      --namespace=$VAULT_NAMESPACE  --create-namespace \
+      --namespace=$VAULT_NAMESPACE  --create-namespace --history-max 3 \
       --set server.dev.devRootToken=$VAULT_ROOT_TOKEN \
       --set server.dev.enabled=true 
     kubectl wait --for=condition=ready pod vault-0 -n ${VAULT_NAMESPACE} 
   elif [[ $VAULT_TYPE = "standalone" ]]
   then
     helm upgrade --install --atomic vault hashicorp/vault -f vault/values.yaml \
-      --namespace=$VAULT_NAMESPACE  --create-namespace \
+      --namespace=$VAULT_NAMESPACE  --create-namespace --history-max 3 \
       --set server.dev.enabled=false \
       --set server.standalone.enabled=true \
       --set server.ha.enabled=false \
@@ -184,11 +195,14 @@ function installVault() {
     kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- vault operator init -key-shares=${VAULT_KEY_SHARED} -key-threshold=${VAULT_KEY_THRESHOLD} -format=json > $VAULT_KEYS_FILE
     VAULT_UNSEAL_KEY=$(cat $VAULT_KEYS_FILE | jq -r ".unseal_keys_b64[]")
     VAULT_ROOT_TOKEN=$(cat $VAULT_KEYS_FILE | jq -r ".root_token")
+    #VAULT_UNSEAL_KEY=$(cat $VAULT_KEYS_FILE | tr { '\n' | tr , '\n' | tr } '\n' | grep unseal_keys_b64 -A 1 | awk  -F'"' 'NR==2 {print $2}')
+    #VAULT_ROOT_TOKEN=$(cat $VAULT_KEYS_FILE | tr { '\n' | tr , '\n' | tr } '\n' | grep root_token | awk  -F'"' '{print $4}' ) 
+    
     kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault operator unseal ${VAULT_UNSEAL_KEY}"  
   elif [[ $VAULT_TYPE = "ha" ]]
   then  
     helm upgrade --install --atomic vault hashicorp/vault -f vault/values.yaml \
-      --namespace=$VAULT_NAMESPACE  --create-namespace \
+      --namespace=$VAULT_NAMESPACE  --create-namespace --history-max 3 \
       --set server.dev.enabled=false \
       --set server.standalone.enabled=false \
       --set server.ha.enabled=true \
@@ -202,26 +216,33 @@ function installVault() {
     VAULT_UNSEAL_KEY=$(cat $VAULT_KEYS_FILE | jq -r ".unseal_keys_b64[]")
     VAULT_ROOT_TOKEN=$(cat $VAULT_KEYS_FILE | jq -r ".root_token")    
     #VAULT_UNSEAL_KEY=$(cat $VAULT_KEYS_FILE | tr { '\n' | tr , '\n' | tr } '\n' | grep unseal_keys_b64 -A 1 | awk  -F'"' 'NR==2 {print $2}')
-    #VAULT_ROOT_TOKEN=$(cat $VAULT_KEYS_FILE | tr { '\n' | tr , '\n' | tr } '\n' | grep "root_token" | awk  -F'"' '{print $4}' ) 
+    #VAULT_ROOT_TOKEN=$(cat $VAULT_KEYS_FILE | tr { '\n' | tr , '\n' | tr } '\n' | grep root_token | awk  -F'"' '{print $4}' ) 
   fi
 
 }
 
 
 ## Get ready for start and show values
-echo  "You can run this script with -h option" $'\n'
-echo "SOLANA_URL: $SOLANA_URL"
-echo "Environment: $P_ENV"
-echo "Use namespase: $NAMESPACE"
-echo "Read keys form: ${KEY_DIR}/ -- (found ${#OPERATOR_KEYS[@]} keys)"
-echo "Proxy replicas: $PROXY_COUNT"
-echo "Keys per proxy replica: $KEYS_PER_PROXY"
-echo "
+echo -e "You can run this script with -h option\n
+ ------------- Values -------------
+       Environment: $P_ENV
+         Namespase: $NAMESPACE
+    Keys directory: ${PWD}/${KEY_DIR} -- (found ${#OPERATOR_KEYS[@]} keys)
+    Proxy replicas: $PROXY_COUNT
+    Keys per proxy: $KEYS_PER_PROXY
+        Solana URL: $SOLANA_URL
 
+ ------------- Modules -------------
   POSTGRES_ENABLED=$POSTGRES_ENABLED
      VAULT_ENABLED=$VAULT_ENABLED
-NEON_PROXY_ENABLED=$NEON_PROXY_ENABLED"
-echo
+NEON_PROXY_ENABLED=$NEON_PROXY_ENABLED
+   INGRESS_ENABLED=$INGRESS_ENABLED
+MONITORING_ENABLED=$MONITORING_ENABLED
+PROMETHEUS_ENABLED=$PROMETHEUS_ENABLED
+   LOGGING_ENABLED=$LOGGING_ENABLED
+   GRAFANA_ENABLED=$GRAFANA_ENABLED
+   \n"
+
 
 ## Simple check for keys and proxies values
 k=${#OPERATOR_KEYS[@]}
@@ -242,13 +263,38 @@ kp=$(( k / p ))
 }
 
 # ## RUN
-helm repo add hashicorp https://helm.releases.hashicorp.com   ## Vault repo
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo add grafana https://grafana.github.io/helm-charts
+[[ $VAULT_ENABLED = "false" ]] || helm repo add hashicorp https://helm.releases.hashicorp.com   ## Vault repo
+[[ $PROMETHEUS_ENABLED = "false" ]] || { 
+  helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+  helm repo add wiremind https://wiremind.github.io/wiremind-helm-charts
+}
+[[ $GRAFANA_ENABLED = "false" ]] || helm repo add grafana https://grafana.github.io/helm-charts
 helm repo update
 
 # ## 0. Create namespace
 kubectl create namespace $NAMESPACE 2>/dev/null
+
+case $STORAGE_CLASS in
+  "efs") DRIVER_NAME="efs.csi.aws.com";;
+  "pd") DRIVER_NAME="pd.csi.storage.gke.io";;
+  "scw-bssd") DRIVER_NAME="csi.scaleway.com";;
+esac
+
+# helm upgrade --install --atomic storage storage/ \
+#   --namespace=$NAMESPACE \
+#   --wait-for-jobs \
+#   --history-max 3 \
+#   --set persistentVolume.storageClass=$STORAGE_CLASS \
+#   --set persistentVolume.fsDriver.name=$DRIVER_NAME \
+#   --set postgres.enabled=$POSTGRES_ENABLED \
+#   --set postgres.storageSize=$PROMETHEUS_STORAGE_SIZE \
+#   --set postgres.hostPath=$PROMETHEUS_STORAGE_DIR \
+#   --set prometheus.fsId=$PROMETHEUS_FS_ID \
+#   --set prometheus.enabled=$PROMETHEUS_ENABLED \
+#   --set prometheus.storageSize=$PROMETHEUS_STORAGE_SIZE \
+#   --set prometheus.hostPath=$PROMETHEUS_STORAGE_DIR \
+#   --set prometheus.fsId=$PROMETHEUS_FS_ID 
+
 
 # 1. Ingress-Nginx
 [[ $INGRESS_ENABLED = "false" ]] || {
@@ -268,14 +314,10 @@ kubectl create namespace $NAMESPACE 2>/dev/null
   POSTGRES_ADMIN_PASSWD=$POSTGRES_PASSWORD
 }
 
-case $POSTGRES_STORAGE_CLASS in
-  "efs") DRIVER_NAME="efs.csi.aws.com";;
-  "scw-bssd") DRIVER_NAME="csi.scaleway.com";;
-esac
-
-
 helm upgrade --install --atomic postgres postgres/ \
   --namespace=$NAMESPACE \
+  --wait-for-jobs \
+  --history-max 3 \
   --set postgres.enabled=$POSTGRES_ENABLED \
   --set POSTGRES_ADMIN_USER=$POSTGRES_ADMIN_USER \
   --set POSTGRES_ADMIN_PASSWD=$POSTGRES_ADMIN_PASSWD \
@@ -285,9 +327,9 @@ helm upgrade --install --atomic postgres postgres/ \
   --set postgres.password=$POSTGRES_PASSWORD \
   --set service.port=$POSTGRES_PORT \
   --set postgres.ssl=$POSTGRES_SSL \
-  --set persistence.storageClassName=$POSTGRES_STORAGE_CLASS \
-  --set efsDriver.name=$DRIVER_NAME \
-  --set efsDriver.efsId=$EFS_ID \
+  --set persistence.storageClass=$STORAGE_CLASS \
+  --set fsDriver.name=$DRIVER_NAME \
+  --set fsDriver.fsId=$POSTGRES_FS_ID \
   --set persistence.hostPath=$POSTGRES_STORAGE_DIR \
   --set persistence.size=$POSTGRES_STORAGE_SIZE \
   --set migrate.enabled=$DB_MIGRATION \
@@ -309,11 +351,12 @@ do
   id=$((id+1))
 done
 
+
 if [[ $VAULT_TYPE = "dev" ]]
 then
   VAULT_ROOT_TOKEN=$VAULT_DEV_TOKEN
 else
-  VAULT_ROOT_TOKEN=$(cat $VAULT_KEYS_FILE | jq -r ".root_token")
+  [[ $VAULT_ROOT_TOKEN ]] || VAULT_ROOT_TOKEN=$(cat $VAULT_KEYS_FILE | jq -r ".root_token")
 fi
 
 echo "Run vault installation"
@@ -321,7 +364,7 @@ echo "Run vault installation"
   installVault
 }
 
-echo "Setup vault install"
+echo "Setup vault"
 
 [[ ! $FIRST_RUN ]] || {
   kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "export NAMESPACE=$NAMESPACE && vault login $VAULT_ROOT_TOKEN && `cat vault/vault.sh`"
@@ -331,12 +374,16 @@ echo "Setup vault install"
 echo "Add keyes"
 
 kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROOT_TOKEN && echo '$SECRET' | xargs vault kv put neon-proxy/proxy"
+kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROOT_TOKEN && echo '$PROXY_ENV' | xargs vault kv put neon-proxy/proxy_env"
+kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROOT_TOKEN && echo '$INDEXER_ENV' | xargs vault kv put neon-proxy/indexer_env"
 
 
 ## 3. Proxy
 [[ $NEON_PROXY_ENABLED = "false" ]] || {
   helm upgrade --install --atomic neon-proxy neon-proxy/ \
     --namespace=$NAMESPACE \
+    --force \
+    --history-max 3 \
     --set ingress.host=$PROXY_HOST \
     --set ingress.className=$INGRESS_CLASS \
     --set solanaUrl=$SOLANA_URL \
@@ -344,25 +391,50 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROO
     --set proxyCount=$PROXY_COUNT \
     --set keysPerProxy=$KEYS_PER_PROXY \
     --set image.tag=$PROXY_VER \
-    --set FAUCET_URL=$FAUCET_URL \
-    --set PROXY_URL=$PROXY_URL \
-    --set LOG_NEON_CLI_DEBUG=$LOG_FULL_OBJECT_INFO \
-    --set FUZZING_BLOCKHASH=$FUZZING_BLOCKHASH \
-    --set LOG_FULL_OBJECT_INFO=$LOG_FULL_OBJECT_INFO \
-    --set CONFIG=$CONFIG \
-    --set PYTH_MAPPING_ACCOUNT=$PYTH_MAPPING_ACCOUNT \
-    --set MIN_OPERATOR_BALANCE_TO_WARN=$MIN_OPERATOR_BALANCE_TO_WARN \
-    --set MIN_OPERATOR_BALANCE_TO_ERR=$MIN_OPERATOR_BALANCE_TO_ERR \
-    --set MINIMAL_GAS_PRICE=$MINIMAL_GAS_PRICE \
-    --set ENABLE_PRIVATE_API=$ENABLE_PRIVATE_API \
-    --set ENABLE_SEND_TX_API=$ENABLE_SEND_TX_API \
-    --set ALLOW_UNDERPRICED_TX_WITHOUT_CHAINID=$ALLOW_UNDERPRICED_TX_WITHOUT_CHAINID \
-    --set EVM_LOADER=$EVM_LOADER \
-    --set NEON_CLI_TIMEOUT=$NEON_CLI_TIMEOUT \
-    --set CONFIRM_TIMEOUT=$CONFIRM_TIMEOUT \
-    --set indexer.GATHER_STATISTICS=$IDX_GATHER_STATISTICS \
-    --set indexer.LOG_FULL_OBJECT_INFO=$IDX_LOG_FULL_OBJECT_INFO \
     --set environment=$P_ENV
+
+    kubectl -n ${NAMESPACE} wait --for=condition=ready pod neon-proxy-0 || { 
+      echo "ERROR: Proxy installation failed"
+      exit 1 
+    }
+}
+
+
+## 4. Monitoring
+[[ $MONITORING_ENABLED = "false" ]] || {
+  helm dependency build monitoring
+
+  # helm upgrade --install --atomic monitoring prometheus-community/prometheus -f monitoring/values.yaml \
+  #   --namespace $NAMESPACE --history-max 3 \
+  #   --set server.enabled=$PROMETHEUS_ENABLED \
+  #   --set alertmanager.enabled=$MONITORING_ENABLED \
+  #   --set configmapReload.enabled=$MONITORING_ENABLED \
+  #   --set kubeStateMetrics.enabled=$MONITORING_ENABLED \
+  #   --set nodeExporter.enabled=$MONITORING_ENABLED \
+  #   --set pushgateway.enabled=$MONITORING_ENABLED 
+
+  helm upgrade --install --atomic monitoring monitoring \
+    --namespace $NAMESPACE --history-max 3 \
+    --set server.enabled=$PROMETHEUS_ENABLED \
+    --set alertmanager.enabled=$MONITORING_ENABLED \
+    --set alertmanager.storage.volumeClaimTemplate.spec.storageClassName=$STORAGE_CLASS \
+    --set alertmanager.storage.volumeClaimTemplate.spec.resources.requests.storage=$PROMETHEUS_STORAGE_SIZE \
+    --set configmapReload.enabled=$MONITORING_ENABLED \
+    --set kubeStateMetrics.enabled=$MONITORING_ENABLED \
+    --set nodeExporter.enabled=$MONITORING_ENABLED \
+    --set pushgateway.enabled=$MONITORING_ENABLED
+
+
+#   --set persistentVolume.fsDriver.name=$DRIVER_NAME \    
+#   --set persistentVolume.fsDriver.name=$DRIVER_NAME \
+#   --set postgres.enabled=$POSTGRES_ENABLED \
+#   --set postgres.hostPath=$PROMETHEUS_STORAGE_DIR \
+#   --set prometheus.fsId=$PROMETHEUS_FS_ID \
+#   --set prometheus.enabled=$PROMETHEUS_ENABLED \
+#   --set prometheus.storageSize=$PROMETHEUS_STORAGE_SIZE \
+#   --set prometheus.hostPath=$PROMETHEUS_STORAGE_DIR \
+#   --set prometheus.fsId=$PROMETHEUS_FS_ID 
+
 }
 
 
@@ -371,3 +443,4 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROO
   echo -e "WARNING: Please copy and keep $VAULT_KEYS_FILE in safe place!"
   echo -e "\n###################\n"
 }
+

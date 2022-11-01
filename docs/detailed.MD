@@ -139,10 +139,13 @@ Address of local neon-proxy that resides inside in your #namespace service.
 For debug purposes this value print in the log information #from neon cli.
 
     `PRX_FUZZING_BLOCKHASH="NO"`
+    
     `PRX_LOG_FULL_OBJECT_INFO="YES"`
+    
     `PRX_CONFIG="CI"`
 
     `PRX_PYTH_MAPPING_ACCOUNT=""`
+    
     This setting uses a pyth network account in order to get solana current currency.
     
     `PRX_MIN_OPERATOR_BALANCE_TO_WARN="4565760000"`
@@ -178,6 +181,7 @@ Confirms timeout from proxy to solana connectivity.
 
    ***INDEXER*** ENVS
         `IDX_GATHER_STATISTICS="YES"`
+	
         `IDX_LOG_FULL_OBJECT_INFO="NO"
 `
 
@@ -206,10 +210,12 @@ Your database TCP port, default is 5432.
 Set as a 'host' if you set up your database in your local cluster.
 Set as 'efs' if you already have an EFS (Elastic file system) storage that will keep your database files.
 
-`## If disabled, the password will be randomly generated.`
-`## It can be set with -d parameter: install_neon_proxy.sh -d some-password ...`
-`## Use this command to show password:`
-`## kubectl get secret postgres-secret #--template={{.data.POSTGRES_PASSWORD}} -n #neon-proxy | base64 --decode`
+`If disabled, the password will be randomly generated.`
+
+`It can be set with -d parameter: install_neon_proxy.sh -d some-password ...`
+`Use this command to show password:`
+`kubectl get secret postgres-secret #--template={{.data.POSTGRES_PASSWORD}} -n #neon-proxy | base64 --decode`
+
 `POSTGRES_PASSWORD=<some password>`
 
 The database password  can be set by using -d using install shell script, if you prefer this as a security standard and let the script generate a new password randomly, get your password from kubernetes secret object as a kubectl command above.
@@ -237,6 +243,7 @@ For further installs/updates, please set this field and uncomment from previewed
 
 DEV_TOKEN is a simple token for development environments only.
 `VAULT_DEV_TOKEN="root"`
+
 `VAULT_KEYS_FILE="vault-keys.json"`
 
 key-shares (int: 5) - Number of key shares to split the generated master key into. This is the number of "unseal keys" to generate.

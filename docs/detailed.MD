@@ -185,7 +185,7 @@ Confirms timeout from proxy to solana connectivity.
         `IDX_GATHER_STATISTICS="YES"`
 	
         `IDX_LOG_FULL_OBJECT_INFO="NO"
-`
+
 
 4. ***PostgreSQL*** Database
 

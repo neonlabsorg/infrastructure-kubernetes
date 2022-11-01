@@ -116,7 +116,7 @@
       
 `      PP_SOLANA_URL=`
 
-   PROXY:
+   ***PROXY:***
     Set proxy/docker image version here.
 `PROXY_VER="v0.13.x"` 
 

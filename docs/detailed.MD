@@ -73,7 +73,7 @@
    
    ***Cluster type***, for Kubernetes provider specific sets, it should be EKS for AWS (Elastic Kubernetes Service), GKE (Google Kubernetes Engine), or local stand k8s setup with localhost value like:
 
-       `CLUSTER_TYPE="localhost" #options are: eks,gke or localhost.`
+       CLUSTER_TYPE="localhost" #options are: eks,gke or localhost.
        
    ***NAMESPACE*** section:
        `NAMESPACE='neon-proxy'`

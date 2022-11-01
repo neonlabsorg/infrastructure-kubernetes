@@ -215,7 +215,9 @@ Set as 'efs' if you already have an EFS (Elastic file system) storage that will 
 `If disabled, the password will be randomly generated.`
 
 `It can be set with -d parameter: install_neon_proxy.sh -d some-password ...`
+
 `Use this command to show password:`
+
 `kubectl get secret postgres-secret #--template={{.data.POSTGRES_PASSWORD}} -n #neon-proxy | base64 --decode`
 
 `POSTGRES_PASSWORD=<some password>`

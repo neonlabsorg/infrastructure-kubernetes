@@ -82,6 +82,7 @@
    ***Operator*** keys and path:
    
     `KEY_DIR='operator-keypairs'`
+    
     `KEY_MASK="id*.json"`
 
 		 KEY_DIR is a path in your device that has neon-labs operator keys, whitin in your current directory.
@@ -111,8 +112,9 @@
     For standalone solana we need to use different values (SOLANA_URL and PP_SOLANA_URL) for these env vars.
     For testnet/devnet/mainnet-beta we can use same values for this env vars (SOLANA_URL and PP_SOLANA_URL)
 
-      `## Solana RPC url. If disabled will be the       same as $SOLANA_URL`
-`      #PP_SOLANA_URL=`
+      `Solana RPC url. If disabled will be the       same as $SOLANA_URL`
+      
+`      PP_SOLANA_URL=`
 
    PROXY:
     Set proxy/docker image version here.

@@ -4,7 +4,7 @@ Kubernetes Cluster:
 
 - 8 vcpu and 16GB RAM.
 - At least 200GB disk space.
-- Kubernetes already installed.
+- Kubernetes already installed (at least 1.21)
 - Helm 3, Kubectl
 
 ### Environments setup
@@ -24,8 +24,11 @@ Copy your public keys on operator-keypairs path.
 
 You can set some important variabels in command line;
 
+#./neon-proxy.sh -h
+
     -f, Variabels file
-    -i, Init setup 
+    -i, Init setup
+    -r, Read-only mode
     -S, SOLANA_URL 
     -s, PP_SOLANA_URL 
     -e, Set environment ("devnet", "testnet" or "mainnet")  
@@ -44,7 +47,8 @@ If your applications are up and running, just forward the proxy port for connect
     
     ❯ curl localhost:9090/solana
     {"jsonrpc": "2.0", "error": {"code": -32000, "message": "'NoneType' object has no attribute 'decode'"}}%  
+    
+Please check detailed parameters in our docs directory.
    
-
 
 

@@ -12,10 +12,25 @@ spec:
       {{- include "neon-proxy.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
       annotations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+        checksum/secret: {{ include (print $.Template.BasePath "/proxy-config.yaml") . | sha256sum }}  
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/agent-inject-status: "update"
+        vault.hashicorp.com/role: "neon-proxy"
+        vault.hashicorp.com/agent-inject-secret-proxy-env: "neon-proxy/proxy_env"
+        vault.hashicorp.com/agent-inject-template-proxy-env: |
+          {{`{{- with secret "neon-proxy/proxy_env" -}}
+            {{ range $k, $v := .Data }}
+            export  {{ $k }}={{ $v }}
+            {{ end }}
+          {{- end }}`}}  
+        vault.hashicorp.com/agent-inject-secret-indexer-env: "neon-proxy/indexer_env"
+        vault.hashicorp.com/agent-inject-template-indexer-env: |
+          {{`{{- with secret "neon-proxy/indexer_env" -}}
+            {{ range $k, $v := .Data }}
+            export  {{ $k }}={{ $v }}
+            {{ end }}
+          {{- end }}`}}       
       labels:
         {{- include "neon-proxy.selectorLabels" . | nindent 8 }}
     spec:
@@ -34,20 +49,15 @@ spec:
           envFrom:
           {{- toYaml .Values.envFrom | nindent 10 }}
         {{- end }}
-          env:
-          - name: SOLANA_URL 
-            value: {{ .Values.solanaUrl }} 
-          - name: EVM_LOADER
-            value: {{ .Values.EVM_LOADER | squote }}
-          - name: CONFIG
-            value: {{ .Values.CONFIG | squote  }}
-          - name: LOG_FULL_OBJECT_INFO
-            value: {{ .Values.indexer.LOG_FULL_OBJECT_INFO | squote }} 
-          - name: GATHER_STATISTICS
-            value: {{ .Values.indexer.GATHER_STATISTICS | squote }}                                
+        {{- if .Values.volumeMounts }}
+          volumeMounts:
+          {{- toYaml .Values.volumeMounts | nindent 10 }}
+        {{- end }}        
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-          command: [proxy/run-indexer.sh]
+          args: ["/bin/sh", "-c", "proxy/run-indexer.sh"]
+      volumes:
+        {{- toYaml .Values.volumes | nindent 8 }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

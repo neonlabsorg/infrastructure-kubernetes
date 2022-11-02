@@ -1,0 +1,30 @@
+{{- if .Values.postgres.enabled -}}
+{{- if eq .Values.persistence.storageClass "efs" -}}
+apiVersion: storage.k8s.io/v1
+kind: CSIDriver
+metadata:
+  name: {{ .Values.fsDriver.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  attachRequired: false
+{{- end -}}
+{{- if eq .Values.persistence.storageClass "pd" -}}
+apiVersion: storage.k8s.io/v1
+kind: CSIDriver
+metadata:
+  name: {{ .Values.fsDriver.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  attachRequired: false
+{{- end -}}
+{{- if eq .Values.persistence.storageClass "scw-bssd" -}}
+apiVersion: storage.k8s.io/v1
+kind: CSIDriver
+metadata:
+  name: {{ .Values.fsDriver.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  attachRequired: false
+{{- end -}}
+{{- end -}}
+

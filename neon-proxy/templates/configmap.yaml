@@ -13,3 +13,25 @@ data:
     OP_KEYS=($RAW)
     i=0; for a in "${OP_KEYS[@]}"; do let i++; echo "$a" > /root/.config/solana/id$i.json; done
     mv /root/.config/solana/id1.json /root/.config/solana/id.json
+  run-proxy.sh: |
+    #!/bin/bash
+    source /vault/secrets/proxy-env
+    COMPONENT=Proxy
+    echo "$(date "+%F %X.%3N") I $(basename $0):${LINENO} $$ ${COMPONENT}:StartScript {} Start ${COMPONENT} service"
+    source proxy/run-set-env.sh ${COMPONENT}
+    echo "$(date "+%F %X.%3N") I $(basename $0):${LINENO} $$ ${COMPONENT}:StartScript {} run-proxy"
+    python3 -m proxy --hostname 0.0.0.0 --port 9090 --enable-web-server --plugins proxy.plugin.NeonRpcApiPlugin $EXTRA_ARGS
+  run-indexer.sh: |
+    #!/bin/bash
+    source /vault/secrets/proxy-env
+    source /vault/secrets/indexer-env     
+    COMPONENT=Indexer
+    echo "$(date "+%F %X.%3N") I $(basename "$0"):${LINENO} $$ ${COMPONENT}:StartScript {} Start ${COMPONENT} service"
+    if [ -z "$EVM_LOADER" ]; then
+        echo "$(date "+%F %X.%3N") I $(basename "$0"):${LINENO} $$ ${COMPONENT}:StartScript {} Extracting EVM_LOADER address from keypair file..."
+        export EVM_LOADER=$(solana address -k /spl/bin/evm_loader-keypair.json)
+        echo "$(date "+%F %X.%3N") I $(basename "$0"):${LINENO} $$ ${COMPONENT}:StartScript {} EVM_LOADER=$EVM_LOADER"
+    fi
+    export INDEXER_MODE='true'
+    source proxy/run-set-env.sh
+    python3 -m proxy

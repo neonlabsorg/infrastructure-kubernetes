@@ -12,7 +12,7 @@ ingress:
 
 image:
   repository: neonlabsorg/proxy
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
   tag: "v0.11.2"
 
 # imageTools:
@@ -49,27 +49,14 @@ extraPorts:
 envFrom:
   - secretRef: 
       name: postgres-secret
+  - secretRef: 
+      name: proxy-config
 
 proxyEnv: {}
 
 solanaUrl: ""
 ppsolanaUrl: ""
 
-FAUCET_URL: ""
-PROXY_URL: ""
-LOG_NEON_CLI_DEBUG: ""
-FUZZING_BLOCKHASH: ""
-LOG_FULL_OBJECT_INFO: ""
-CONFIG: ""
-PYTH_MAPPING_ACCOUNT: ""
-MIN_OPERATOR_BALANCE_TO_WARN: ""
-MIN_OPERATOR_BALANCE_TO_ERR: ""
-MINIMAL_GAS_PRICE: ""
-ENABLE_PRIVATE_AP: ""
-ALLOW_UNDERPRICED_TX_WITHOUT_CHAINID: ""
-EVM_LOADER: ""
-NEON_CLI_TIMEOUT: ""
-CONFIRM_TIMEOUT: ""
 
 volumes: 
   - name: proxy-keys-script
@@ -81,6 +68,12 @@ volumeMounts:
   - name: proxy-keys-script
     mountPath: /root/.config/solana/scripts/get_keys.sh
     subPath: get_keys.sh
+  - name: proxy-keys-script
+    mountPath: /opt/proxy/run-proxy.sh
+    subPath: run-proxy.sh
+  - name: proxy-keys-script
+    mountPath: /opt/proxy/run-indexer.sh
+    subPath: run-indexer.sh
 
 indexer:
   service:
@@ -95,7 +88,7 @@ indexer:
   tolerations: []
   affinity: {}
   podAnnotations: {}
-
+ 
 
 
 

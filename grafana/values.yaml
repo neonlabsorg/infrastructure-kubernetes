@@ -288,7 +288,7 @@ extraContainerVolumes: []
 persistence:
   type: pvc
   enabled: true
-  storageClassName: standard
+  storageClass: standard
   accessModes:
     - ReadWriteOnce
   size: 10Gi

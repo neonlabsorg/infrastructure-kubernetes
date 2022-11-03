@@ -33,14 +33,21 @@
     There are kubernetes install script for local development and work as operators `neon-proxy.sh`, and there it will deploy:
 
    a. `neon-proxy` namespace.
+   
    b. `proxy-svc` Proxy service.
+   
    c. `indexersvc` Indexer service.
+   
    d. For local tests: `airdropper` and `faucet` services (devnet and testnet).
+   
    e. Prometheus (used to gather application metrics from proxy and indexer services).
+   
    f. Loki (tool for log collection from all applications inside the cluster).
+   
    g. Grafana (Visual graph tool in order to create monitoring metrics from platform).
 
   For database, we have two options:
+  
    - Postgresql database inside kubernetes as a pod.  `POSTGRES_ENABLED="true" ` 
    
    - Use your external database from the kubernetes cluster to your own PostgreSQL database such as RDS(AWS), CloudSQL(GCP) or other bare metal or Virtual Machine based install. (Recommended for production)   `POSTGRES_ENABLED="true" ` and then set the following:

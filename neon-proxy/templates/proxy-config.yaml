@@ -5,5 +5,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
 type: Opaque
 data:
+  SOLANA_URL: {{ .Values.solanaUrl | b64enc | quote }}
+  PP_SOLANA_URL: {{ .Values.ppsolanaUrl | b64enc | quote }}
   PROXY_COUNT: {{ .Values.proxyCount | toString | b64enc | quote }}
   KEYS_PER_PROXY: {{ .Values.keysPerProxy | toString | b64enc | quote }}

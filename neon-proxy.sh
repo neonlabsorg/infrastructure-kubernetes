@@ -22,7 +22,7 @@ VAR_FILE="config.ini"
 HELP="\nUsage: $0 [OPTION]...\n
   -f, Variabels file \n
   -i, Init setup \n
-  -r, Read-only mode\n
+  -r, Read-only mode\n  
   -S, SOLANA_URL\n
   -s, PP_SOLANA_URL\n
   -e, Set environment (\"devnet\", \"testnet\" or \"mainnet\") \n
@@ -34,7 +34,7 @@ HELP="\nUsage: $0 [OPTION]...\n
   "
 
 ## Get options
-while getopts ":f:k:n:p:v:S:s:e:yhmi" opt; do
+while getopts ":f:k:n:p:v:S:s:e:yhmir" opt; do
   case $opt in
     f) VAR_FILE=${OPTARG} ;;
     k) CLI_KEY_DIR=${OPTARG} ;;
@@ -46,8 +46,8 @@ while getopts ":f:k:n:p:v:S:s:e:yhmi" opt; do
     e) CLI_P_ENV=${OPTARG} ;;
     y) FORCE_APPLY=1 ;;
     m) DB_MIGRATION="true" ;;  
-    i) FIRST_RUN="true";DB_MIGRATION="true" ;;        
-    r) CLI_READONLY="true" ;;
+    i) FIRST_RUN="true";DB_MIGRATION="true" ;;
+    r) CLI_READONLY="true" ;;    
     h) echo -e $HELP;exit 0 ;;
     *) echo "Invalid option -$OPTARG" >&2
     exit 1
@@ -86,7 +86,7 @@ INDEXER_ENV=$(grep -Po 'IDX_\K.*' $VAR_FILE)
 [ ! $CLI_PP_SOLANA_URL ] || PP_SOLANA_URL=$CLI_SOLANA_URL
 [ ! $CLI_P_ENV ] || P_ENV=$CLI_P_ENV
 [ ! $CLI_KEY_DIR ] || KEY_DIR=$CLI_KEY_DIR
-[ ! $CLI_READONLY ] || ENABLE_SEND_TX_API="NO"
+[ ! $CLI_READONLY ] || PRX_ENABLE_SEND_TX_API="NO"
 
 ## Check variables
 [ $FIRST_RUN ] || kubectl get ns $NAMESPACE || {
@@ -115,13 +115,15 @@ INDEXER_ENV=$(grep -Po 'IDX_\K.*' $VAR_FILE)
 }
 
 ## Check for operator keys
-[ "$(ls $KEY_DIR/$KEY_MASK 2>/dev/null)" ] || { 
+[ $PRX_ENABLE_SEND_TX_API == "NO" ] || [ "$(ls $KEY_DIR/$KEY_MASK 2>/dev/null)" ] || { 
     echo "ERROR: Keypairs not found in $KEY_DIR/"
     exit 1 
 }
 
 ## Read key files to variable $OPERATOR_KEYS
-for k in $(awk '{print}' $KEY_DIR/$KEY_MASK );do OPERATOR_KEYS+=($k);done
+[ $PRX_ENABLE_SEND_TX_API == "NO" ] || {
+  for k in $(awk '{print}' $KEY_DIR/$KEY_MASK );do OPERATOR_KEYS+=($k);done
+}
 
 [ $POSTGRES_HOST ] && [ $POSTGRES_DB ] && [ $POSTGRES_USER ] || {
     echo -e "ERROR: Postgres credentials not specified. Check $VAR_FILE\n
@@ -237,21 +239,19 @@ echo -e "You can run this script with -h option\n
      VAULT_ENABLED=$VAULT_ENABLED
 NEON_PROXY_ENABLED=$NEON_PROXY_ENABLED
    INGRESS_ENABLED=$INGRESS_ENABLED
-MONITORING_ENABLED=$MONITORING_ENABLED
-PROMETHEUS_ENABLED=$PROMETHEUS_ENABLED
-   LOGGING_ENABLED=$LOGGING_ENABLED
-   GRAFANA_ENABLED=$GRAFANA_ENABLED
    \n"
 
 
 ## Simple check for keys and proxies values
-k=${#OPERATOR_KEYS[@]}
-p=$PROXY_COUNT
-kp=$(( k / p ))
+[ $PRX_ENABLE_SEND_TX_API == "NO" ] || {
+  k=${#OPERATOR_KEYS[@]}
+  p=$PROXY_COUNT
+  kp=$(( k / p ))
 
-[ $kp -gt 0 ] || { 
-    echo "ERROR: The number of proxies cannot be more than the adjusted keys"
-    exit 1 
+  [ $kp -gt 0 ] || { 
+      echo "ERROR: The number of proxies cannot be more than the adjusted keys"
+      exit 1 
+  }
 }
 
 ## Ask user if they are satisfied with the launch options
@@ -341,17 +341,6 @@ helm upgrade --install --atomic postgres postgres/ \
 }
 
 # ## 2. Vault
-echo "Read operator keys"
-SECRET=()
-id=0
-for((i=0; i < ${#OPERATOR_KEYS[@]}; i+=$KEYS_PER_PROXY))
-do
-  part=( "${OPERATOR_KEYS[@]:i:KEYS_PER_PROXY}" )
-  SECRET+=$(echo -n neon-proxy-${id}=\"${part[*]}\"; echo -n " " )
-  id=$((id+1))
-done
-
-
 if [[ $VAULT_TYPE = "dev" ]]
 then
   VAULT_ROOT_TOKEN=$VAULT_DEV_TOKEN
@@ -372,8 +361,20 @@ echo "Setup vault"
 }
 
 echo "Add keyes"
+if [[ $PRX_ENABLE_SEND_TX_API == "YES" ]]
+then
+  echo "Read operator keys"
+  SECRET=()
+  id=0
+  for((i=0; i < ${#OPERATOR_KEYS[@]}; i+=$KEYS_PER_PROXY))
+  do
+    part=( "${OPERATOR_KEYS[@]:i:KEYS_PER_PROXY}" )
+    SECRET+=$(echo -n neon-proxy-${id}=\"${part[*]}\"; echo -n " " )
+    id=$((id+1))
+  done
+  kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROOT_TOKEN && echo '$SECRET' | xargs vault kv put neon-proxy/proxy"
+fi
 
-kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROOT_TOKEN && echo '$SECRET' | xargs vault kv put neon-proxy/proxy"
 kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROOT_TOKEN && echo '$PROXY_ENV' | xargs vault kv put neon-proxy/proxy_env"
 kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROOT_TOKEN && echo '$INDEXER_ENV' | xargs vault kv put neon-proxy/indexer_env"
 
@@ -391,6 +392,7 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROO
     --set proxyCount=$PROXY_COUNT \
     --set keysPerProxy=$KEYS_PER_PROXY \
     --set image.tag=$PROXY_VER \
+    --set ENABLE_SEND_TX_API=$PRX_ENABLE_SEND_TX_API \
     --set environment=$P_ENV
 
     kubectl -n ${NAMESPACE} wait --for=condition=ready pod neon-proxy-0 || { 
@@ -443,4 +445,3 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROO
   echo -e "WARNING: Please copy and keep $VAULT_KEYS_FILE in safe place!"
   echo -e "\n###################\n"
 }
-

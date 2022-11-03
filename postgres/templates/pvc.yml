@@ -6,9 +6,19 @@ metadata:
   labels:
     {{- include "postgres.labels" . | nindent 4 }}
 spec:
-  storageClassName: {{ .Values.persistence.storageClassName }}
+  storageClassName: {{ .Values.persistence.storageClass }}
+  {{- if eq .Values.persistence.storageClass "host" }}  
   accessModes:
     - ReadWriteMany
+  {{- end }}
+  {{- if eq .Values.persistence.storageClass "efs" }}   
+  accessModes:
+    - ReadWriteMany
+  {{- end }}
+   {{- if eq .Values.persistence.storageClass "pd" }}  
+  accessModes:
+    - ReadWriteOnce
+  {{- end }}     
   resources:
     requests:
       storage: {{ .Values.persistence.size }}

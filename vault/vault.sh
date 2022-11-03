@@ -10,5 +10,13 @@ vault secrets enable -path=$NAMESPACE kv
 vault policy write ${NAMESPACE} - <<EOF
 path "${NAMESPACE}/proxy" {
 capabilities = ["read"]
+}
+
+path "${NAMESPACE}/proxy_env" {
+capabilities = ["read"]
+}
+
+path "${NAMESPACE}/indexer_env" {
+capabilities = ["read"]
 } 
 EOF

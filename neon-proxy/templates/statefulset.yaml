@@ -25,11 +25,20 @@ spec:
         vault.hashicorp.com/agent-inject: "true"
         vault.hashicorp.com/agent-inject-status: "update"
         vault.hashicorp.com/role: "neon-proxy"
+        {{- if eq .Values.ENABLE_SEND_TX_API "YES" }} 
         vault.hashicorp.com/agent-inject-secret-operator-kyes: "neon-proxy/proxy"
         vault.hashicorp.com/agent-inject-template-operator-keys: |
           {{`{{- with secret "neon-proxy/proxy" -}}
           {{ .Data }}
           {{- end }}`}}
+        {{- end }}
+        vault.hashicorp.com/agent-inject-secret-proxy-env: "neon-proxy/proxy_env"
+        vault.hashicorp.com/agent-inject-template-proxy-env: |
+          {{`{{- with secret "neon-proxy/proxy_env" -}}
+            {{ range $k, $v := .Data }}
+            export  {{ $k }}={{ $v }}
+            {{ end }}
+          {{- end }}`}}          
       labels:
         {{- include "neon-proxy.selectorLabels" . | nindent 8 }}
         {{- with .Values.podLabels }}
@@ -56,43 +65,6 @@ spec:
             protocol: {{ .protocol }}
           {{- end }}
         {{- end }}
-          env:
-          - name: SOLANA_URL 
-            value: {{ .Values.solanaUrl | squote }}
-          - name: PP_SOLANA_URL
-            value: {{ .Values.ppsolanaUrl | squote}}
-          - name: FAUCET_URL
-            value: {{ .Values.FAUCET_URL | squote}}
-          - name: PROXY_URL
-            value: {{ .Values.PROXY_URL | squote }}
-          - name: LOG_NEON_CLI_DEBUG
-            value: {{ .Values.LOG_NEON_CLI_DEBUG | squote }}
-          - name: FUZZING_BLOCKHASH
-            value: {{ .Values.FUZZING_BLOCKHASH | squote }}
-          - name: LOG_FULL_OBJECT_INFO
-            value: {{ .Values.LOG_FULL_OBJECT_INFO | squote }}
-          - name: CONFIG
-            value: {{ .Values.CONFIG | squote  }}
-          - name: PYTH_MAPPING_ACCOUNT
-            value: {{ .Values.PYTH_MAPPING_ACCOUNT | squote  }}
-          - name: MIN_OPERATOR_BALANCE_TO_WARN
-            value: {{ .Values.MIN_OPERATOR_BALANCE_TO_WARN | squote  }}
-          - name: MIN_OPERATOR_BALANCE_TO_ERR
-            value: {{ .Values.MIN_OPERATOR_BALANCE_TO_ERR | squote }}
-          - name: MINIMAL_GAS_PRICE
-            value: {{ .Values.MINIMAL_GAS_PRICE | squote }}
-          - name: ENABLE_PRIVATE_API
-            value: {{ .Values.ENABLE_PRIVATE_API | squote }}
-          - name: ENABLE_SEND_TX_API
-            value: {{ .Values.ENABLE_SEND_TX_API | squote }}
-          - name: ALLOW_UNDERPRICED_TX_WITHOUT_CHAINID 
-            value: {{ .Values.ALLOW_UNDERPRICED_TX_WITHOUT_CHAINID | squote }}
-          - name: EVM_LOADER
-            value: {{ .Values.EVM_LOADER | squote }}
-          - name: NEON_CLI_TIMEOUT
-            value: {{ .Values.NEON_CLI_TIMEOUT | squote }}
-          - name: CONFIRM_TIMEOUT
-            value: {{ .Values.CONFIRM_TIMEOUT | squote }}
         {{- if .Values.volumeMounts }}
           volumeMounts:
           {{- toYaml .Values.volumeMounts | nindent 10 }}
@@ -101,10 +73,12 @@ spec:
           resources:
             {{- toYaml . | nindent 12 }}
         {{- end }}
+        {{- if eq .Values.ENABLE_SEND_TX_API "YES" }}
           lifecycle:
             postStart:
               exec:
                 command: ["/bin/sh", "-c", "/root/.config/solana/scripts/get_keys.sh"]
+        {{- end }}
       volumes:
         {{- toYaml .Values.volumes | nindent 8 }}
       {{- with .Values.nodeSelector }}

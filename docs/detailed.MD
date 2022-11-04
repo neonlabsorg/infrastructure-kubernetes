@@ -268,7 +268,7 @@ key-threshold (int: 3) - Number of key shares required to reconstruct the root k
 replicas (number) Set the number of replicas of vault pods inside your cluster.
 `VAULT_HA_REPLICAS=2`
 
-#EXAMPLES
+# EXAMPLES
 
 ## First install with my operator keys
 

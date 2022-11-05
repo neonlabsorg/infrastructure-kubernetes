@@ -1,7 +1,7 @@
 # Running neon-proxy with Kubernetes (operators)
 ## _Setup covers install steps for k8s_
 
-[![N|Solid](https://www.vectorlogo.zone/logos/kubernetes/kubernetes-ar21.svg)](https://kubernetes.io)
+[![Kubernetes](https://www.vectorlogo.zone/logos/kubernetes/kubernetes-ar21.svg)](https://kubernetes.io)
 
 
 **-> Running neon-proxy (operator) with Kubernetes**
@@ -95,6 +95,11 @@
 		 KEY_DIR is a path in your device that has neon-labs operator keys, whitin in your current directory.
 		 
          KEY_MASK is the regular expression that finds your json files.
+	 
+****Read-only mode****
+	 
+	 This install process has an option called (read-only mode), in this scenario, you don't need operator keys.
+	 Just use ( -r ) parameter on install process.
 
    ***SOLANA*** section:
 

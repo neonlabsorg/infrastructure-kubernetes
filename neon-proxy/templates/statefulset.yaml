@@ -26,16 +26,18 @@ spec:
         vault.hashicorp.com/agent-inject-status: "update"
         vault.hashicorp.com/role: "neon-proxy"
         {{- if eq .Values.ENABLE_SEND_TX_API "YES" }} 
-        vault.hashicorp.com/agent-inject-secret-operator-kyes: "neon-proxy/proxy"
+        vault.hashicorp.com/agent-inject-secret-operator-keys: "neon-proxy/data/proxy"
         vault.hashicorp.com/agent-inject-template-operator-keys: |
-          {{`{{- with secret "neon-proxy/proxy" -}}
-          {{ .Data }}
-          {{- end }}`}}
+          {{`{{- with secret "neon-proxy/data/proxy" -}}
+            {{ range $k, $v := .Data.data }}
+            {{ $k }}: {{ $v }}
+            {{ end }}
+          {{- end -}}`}}
         {{- end }}
-        vault.hashicorp.com/agent-inject-secret-proxy-env: "neon-proxy/proxy_env"
+        vault.hashicorp.com/agent-inject-secret-proxy-env: "neon-proxy/data/proxy_env"
         vault.hashicorp.com/agent-inject-template-proxy-env: |
-          {{`{{- with secret "neon-proxy/proxy_env" -}}
-            {{ range $k, $v := .Data }}
+          {{`{{- with secret "neon-proxy/data/proxy_env" -}}
+            {{ range $k, $v := .Data.data }}
             export  {{ $k }}={{ $v }}
             {{ end }}
           {{- end }}`}}          

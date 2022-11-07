@@ -9,7 +9,8 @@
 *.tmproj
 .vscode/
 
-operator-keypairs/id*.json
+operator-keypairs/*.json
+devnet-operators-keys
 
 neon-proxy/charts/*.tgz
 tmp.txt

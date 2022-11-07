@@ -57,7 +57,6 @@ proxyEnv: {}
 solanaUrl: ""
 ppsolanaUrl: ""
 
-
 volumes: 
   - name: proxy-keys-script
     configMap:

@@ -34,7 +34,7 @@ HELP="\nUsage: $0 [OPTION]...\n
   "
 
 ## Get options
-while getopts ":f:k:n:p:v:S:s:e:yhmir" opt; do
+while getopts ":f:k:n:p:v:S:s:e:yhmird" opt; do
   case $opt in
     f) VAR_FILE=${OPTARG} ;;
     k) CLI_KEY_DIR=${OPTARG} ;;
@@ -48,6 +48,7 @@ while getopts ":f:k:n:p:v:S:s:e:yhmir" opt; do
     m) DB_MIGRATION="true" ;;  
     i) FIRST_RUN="true";DB_MIGRATION="true" ;;
     r) CLI_READONLY="true" ;;    
+    d) DESTROY="true" ;;    
     h) echo -e $HELP;exit 0 ;;
     *) echo "Invalid option -$OPTARG" >&2
     exit 1
@@ -87,6 +88,14 @@ INDEXER_ENV=$(grep -Po 'IDX_\K.*' $VAR_FILE)
 [ ! $CLI_P_ENV ] || P_ENV=$CLI_P_ENV
 [ ! $CLI_KEY_DIR ] || KEY_DIR=$CLI_KEY_DIR
 [ ! $CLI_READONLY ] || PRX_ENABLE_SEND_TX_API="NO"
+
+[ ! $DESTROY ] || {
+  kubectl delete ns $NAMESPACE
+  kubectl delete pv $NAMESPACE-postgres-persistent-volume
+  kubectl delete MutatingWebhookConfiguration vault-agent-injector-cfg
+  exit 0
+}
+
 
 ## Check variables
 [ $FIRST_RUN ] || kubectl get ns $NAMESPACE || {
@@ -364,15 +373,14 @@ echo "Add keyes"
 if [[ $PRX_ENABLE_SEND_TX_API == "YES" ]]
 then
   echo "Read operator keys"
-  SECRET=()
   id=0
   for((i=0; i < ${#OPERATOR_KEYS[@]}; i+=$KEYS_PER_PROXY))
   do
     part=( "${OPERATOR_KEYS[@]:i:KEYS_PER_PROXY}" )
-    SECRET+=$(echo -n neon-proxy-${id}=\"${part[*]}\"; echo -n " " )
+    [ $id != 0 ] || kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROOT_TOKEN && vault kv put neon-proxy/proxy neon-proxy-${id}=\"${part[*]}\""
+    kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROOT_TOKEN && vault kv patch neon-proxy/proxy neon-proxy-${id}=\"${part[*]}\""
     id=$((id+1))
   done
-  kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROOT_TOKEN && echo '$SECRET' | xargs vault kv put neon-proxy/proxy"
 fi
 
 kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROOT_TOKEN && echo '$PROXY_ENV' | xargs vault kv put neon-proxy/proxy_env"

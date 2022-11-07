@@ -130,7 +130,7 @@ INDEXER_ENV=$(grep -Po 'IDX_\K.*' $VAR_FILE)
 }
 
 ## Read key files to variable $OPERATOR_KEYS
-[ $PRX_ENABLE_SEND_TX_API == "NO" ] || {
+[[ $PRX_ENABLE_SEND_TX_API == "NO" ]] || {
   for k in $(awk '{print}' $KEY_DIR/$KEY_MASK );do OPERATOR_KEYS+=($k);done
 }
 
@@ -252,7 +252,7 @@ NEON_PROXY_ENABLED=$NEON_PROXY_ENABLED
 
 
 ## Simple check for keys and proxies values
-[ $PRX_ENABLE_SEND_TX_API == "NO" ] || {
+[[ $PRX_ENABLE_SEND_TX_API == "NO" ]] || {
   k=${#OPERATOR_KEYS[@]}
   p=$PROXY_COUNT
   kp=$(( k / p ))
@@ -411,8 +411,8 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROO
 
 
 ## 4. Monitoring
-[[ $MONITORING_ENABLED = "false" ]] || {
-  helm dependency build monitoring
+# [[ $MONITORING_ENABLED = "false" ]] || {
+#   helm dependency build monitoring
 
   # helm upgrade --install --atomic monitoring prometheus-community/prometheus -f monitoring/values.yaml \
   #   --namespace $NAMESPACE --history-max 3 \
@@ -423,16 +423,16 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROO
   #   --set nodeExporter.enabled=$MONITORING_ENABLED \
   #   --set pushgateway.enabled=$MONITORING_ENABLED 
 
-  helm upgrade --install --atomic monitoring monitoring \
-    --namespace $NAMESPACE --history-max 3 \
-    --set server.enabled=$PROMETHEUS_ENABLED \
-    --set alertmanager.enabled=$MONITORING_ENABLED \
-    --set alertmanager.storage.volumeClaimTemplate.spec.storageClassName=$STORAGE_CLASS \
-    --set alertmanager.storage.volumeClaimTemplate.spec.resources.requests.storage=$PROMETHEUS_STORAGE_SIZE \
-    --set configmapReload.enabled=$MONITORING_ENABLED \
-    --set kubeStateMetrics.enabled=$MONITORING_ENABLED \
-    --set nodeExporter.enabled=$MONITORING_ENABLED \
-    --set pushgateway.enabled=$MONITORING_ENABLED
+  # helm upgrade --install --atomic monitoring monitoring \
+  #   --namespace $NAMESPACE --history-max 3 \
+  #   --set server.enabled=$PROMETHEUS_ENABLED \
+  #   --set alertmanager.enabled=$MONITORING_ENABLED \
+  #   --set alertmanager.storage.volumeClaimTemplate.spec.storageClassName=$STORAGE_CLASS \
+  #   --set alertmanager.storage.volumeClaimTemplate.spec.resources.requests.storage=$PROMETHEUS_STORAGE_SIZE \
+  #   --set configmapReload.enabled=$MONITORING_ENABLED \
+  #   --set kubeStateMetrics.enabled=$MONITORING_ENABLED \
+  #   --set nodeExporter.enabled=$MONITORING_ENABLED \
+  #   --set pushgateway.enabled=$MONITORING_ENABLED
 
 
 #   --set persistentVolume.fsDriver.name=$DRIVER_NAME \    
@@ -445,7 +445,7 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROO
 #   --set prometheus.hostPath=$PROMETHEUS_STORAGE_DIR \
 #   --set prometheus.fsId=$PROMETHEUS_FS_ID 
 
-}
+# }
 
 
 [ $VAULT_TYPE = "dev" ] || {

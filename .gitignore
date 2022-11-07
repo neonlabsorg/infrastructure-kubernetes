@@ -15,7 +15,7 @@ devnet-operators-keys
 neon-proxy/charts/*.tgz
 tmp.txt
 
-*.ini
+config*.ini
 
 vault-keys.json
 

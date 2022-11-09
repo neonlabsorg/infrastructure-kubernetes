@@ -124,7 +124,7 @@ INDEXER_ENV=$(grep -Po 'IDX_\K.*' $VAR_FILE)
 }
 
 ## Check for operator keys
-[ $PRX_ENABLE_SEND_TX_API == "NO" ] || [ "$(ls $KEY_DIR/$KEY_MASK 2>/dev/null)" ] || { 
+[[ $PRX_ENABLE_SEND_TX_API == "NO" ]] || [ "$(ls $KEY_DIR/$KEY_MASK 2>/dev/null)" ] || { 
     echo "ERROR: Keypairs not found in $KEY_DIR/"
     exit 1 
 }

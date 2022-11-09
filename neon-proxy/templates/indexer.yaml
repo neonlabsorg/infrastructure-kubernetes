@@ -55,6 +55,8 @@ spec:
         {{- end }}        
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          command: ["/bin/sh"]
+          args: ["proxy/run-indexer.sh"]
       volumes:
         {{- toYaml .Values.volumes | nindent 8 }}
       {{- with .Values.nodeSelector }}

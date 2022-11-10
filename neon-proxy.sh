@@ -14,10 +14,6 @@ VAR_FILE="config.ini"
     echo "ERROR: Helm not installed"
     exit 1
 }
-[ "$(which jq)" ] || { 
-    echo "ERROR: jq not installed"
-    exit 1 
-}
 
 HELP="\nUsage: $0 [OPTION]...\n
   -f, Variabels file \n
@@ -204,10 +200,8 @@ function installVault() {
       --set server.standalone.config="$VAULT_CONFIG"
     sleep 20
     kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- vault operator init -key-shares=${VAULT_KEY_SHARED} -key-threshold=${VAULT_KEY_THRESHOLD} -format=json > $VAULT_KEYS_FILE
-    VAULT_UNSEAL_KEY=$(cat $VAULT_KEYS_FILE | jq -r ".unseal_keys_b64[]")
-    VAULT_ROOT_TOKEN=$(cat $VAULT_KEYS_FILE | jq -r ".root_token")
-    #VAULT_UNSEAL_KEY=$(cat $VAULT_KEYS_FILE | tr { '\n' | tr , '\n' | tr } '\n' | grep unseal_keys_b64 -A 1 | awk  -F'"' 'NR==2 {print $2}')
-    #VAULT_ROOT_TOKEN=$(cat $VAULT_KEYS_FILE | tr { '\n' | tr , '\n' | tr } '\n' | grep root_token | awk  -F'"' '{print $4}' ) 
+    VAULT_UNSEAL_KEY=$(cat $VAULT_KEYS_FILE | tr { '\n' | tr , '\n' | tr } '\n' | grep unseal_keys_b64 -A 1 | awk  -F'"' 'NR==2 {print $2}')
+    VAULT_ROOT_TOKEN=$(cat $VAULT_KEYS_FILE | tr { '\n' | tr , '\n' | tr } '\n' | grep root_token | awk  -F'"' '{print $4}' ) 
     
     kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault operator unseal ${VAULT_UNSEAL_KEY}"  
   elif [[ $VAULT_TYPE = "ha" ]]
@@ -224,10 +218,8 @@ function installVault() {
       kubectl -n ${VAULT_NAMESPACE} exec vault-$i -- /bin/sh -c "vault operator unseal ${VAULT_UNSEAL_KEY}"
     done    
     kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- vault operator init -key-shares=${VAULT_KEY_SHARED} -key-threshold=${VAULT_KEY_THRESHOLD} -format=json > $VAULT_KEYS_FILE
-    VAULT_UNSEAL_KEY=$(cat $VAULT_KEYS_FILE | jq -r ".unseal_keys_b64[]")
-    VAULT_ROOT_TOKEN=$(cat $VAULT_KEYS_FILE | jq -r ".root_token")    
-    #VAULT_UNSEAL_KEY=$(cat $VAULT_KEYS_FILE | tr { '\n' | tr , '\n' | tr } '\n' | grep unseal_keys_b64 -A 1 | awk  -F'"' 'NR==2 {print $2}')
-    #VAULT_ROOT_TOKEN=$(cat $VAULT_KEYS_FILE | tr { '\n' | tr , '\n' | tr } '\n' | grep root_token | awk  -F'"' '{print $4}' ) 
+    VAULT_UNSEAL_KEY=$(cat $VAULT_KEYS_FILE | tr { '\n' | tr , '\n' | tr } '\n' | grep unseal_keys_b64 -A 1 | awk  -F'"' 'NR==2 {print $2}')
+    VAULT_ROOT_TOKEN=$(cat $VAULT_KEYS_FILE | tr { '\n' | tr , '\n' | tr } '\n' | grep root_token | awk  -F'"' '{print $4}' ) 
   fi
 
 }

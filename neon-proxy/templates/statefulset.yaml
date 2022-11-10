@@ -42,6 +42,7 @@ spec:
             {{ end }}
           {{- end }}`}}          
       labels:
+        application-pod: neon-proxy
         {{- include "neon-proxy.selectorLabels" . | nindent 8 }}
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}

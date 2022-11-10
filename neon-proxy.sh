@@ -350,7 +350,7 @@ else
 fi
 
 echo "Run vault installation"
-[[ ! $VAULT_ENABLED = "true" && ! $FIRST_RUN ]] || {
+[[ ! $FIRST_RUN ]] || [[ ! $VAULT_ENABLED == "true" ]] || {
   installVault
 }
 

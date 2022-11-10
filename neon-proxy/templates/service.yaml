@@ -28,7 +28,7 @@ spec:
     {{- end }}
   {{- end }}      
   selector:
-    {{- include "neon-proxy.selectorLabels" . | nindent 4 }}
+    application-pod: neon-proxy
 
 ---
 apiVersion: v1

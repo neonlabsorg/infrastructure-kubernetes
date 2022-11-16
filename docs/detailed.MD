@@ -1,7 +1,7 @@
 # Running neon-proxy with Kubernetes (operators)
 ## _Setup covers install steps for k8s_
 
-[![N|Solid](https://www.vectorlogo.zone/logos/kubernetes/kubernetes-ar21.svg)](https://kubernetes.io)
+[![Kubernetes](https://www.vectorlogo.zone/logos/kubernetes/kubernetes-ar21.svg)](https://kubernetes.io)
 
 
 **-> Running neon-proxy (operator) with Kubernetes**
@@ -33,14 +33,21 @@
     There are kubernetes install script for local development and work as operators `neon-proxy.sh`, and there it will deploy:
 
    a. `neon-proxy` namespace.
+   
    b. `proxy-svc` Proxy service.
+   
    c. `indexersvc` Indexer service.
+   
    d. For local tests: `airdropper` and `faucet` services (devnet and testnet).
+   
    e. Prometheus (used to gather application metrics from proxy and indexer services).
+   
    f. Loki (tool for log collection from all applications inside the cluster).
+   
    g. Grafana (Visual graph tool in order to create monitoring metrics from platform).
 
   For database, we have two options:
+  
    - Postgresql database inside kubernetes as a pod.  `POSTGRES_ENABLED="true" ` 
    
    - Use your external database from the kubernetes cluster to your own PostgreSQL database such as RDS(AWS), CloudSQL(GCP) or other bare metal or Virtual Machine based install. (Recommended for production)   `POSTGRES_ENABLED="true" ` and then set the following:
@@ -88,6 +95,11 @@
 		 KEY_DIR is a path in your device that has neon-labs operator keys, whitin in your current directory.
 		 
          KEY_MASK is the regular expression that finds your json files.
+	 
+****Read-only mode****
+	 
+	 This install process has an option called (read-only mode), in this scenario, you don't need operator keys.
+	 Just use ( -r ) parameter on install process.
 
    ***SOLANA*** section:
 
@@ -260,4 +272,18 @@ key-threshold (int: 3) - Number of key shares required to reconstruct the root k
 
 replicas (number) Set the number of replicas of vault pods inside your cluster.
 `VAULT_HA_REPLICAS=2`
+
+# EXAMPLES
+
+## First install with my operator keys
+
+Running a operator for first time and all provisioned migrations ( -i ), with operator keys inside operator-keypairs-full path ( -k ) and using my local file ( -f ) named config.ini.local
+
+[![asciicast](https://asciinema.org/a/Wr91t5WbJBaWs7AH5m7VXbMBG.svg)](https://asciinema.org/a/Wr91t5WbJBaWs7AH5m7VXbMBG)
+
+## First install without keys and read only mode
+
+In this option, I didn't have any operator key, and the proxy runs in read only mode ( -r )
+
+[![asciicast](https://asciinema.org/a/aQygYbL2dnszJNm5Pw1f8rGZ7.svg)](https://asciinema.org/a/aQygYbL2dnszJNm5Pw1f8rGZ7)
 

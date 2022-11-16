@@ -49,6 +49,18 @@ spec:
         {{- end }}
     spec:
       serviceAccountName: {{ .Values.serviceAccount.name }}
+      {{- if .Values.onePod.enabled }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+                - key: "app.kubernetes.io/name"
+                  operator: In
+                  values:
+                  - neon-proxy
+            topologyKey: "kubernetes.io/hostname"
+      {{- end }}               
       containers:
         - name: proxy
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -72,9 +84,14 @@ spec:
           volumeMounts:
           {{- toYaml .Values.volumeMounts | nindent 10 }}
         {{- end }}
-        {{- with .Values.resources }}
+        {{- if .Values.resources }}
           resources:
-            {{- toYaml . | nindent 12 }}
+            requests:
+              cpu: {{ .Values.resources.requests.cpu }}
+              memory: {{ .Values.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.resources.limits.cpu }}
+              memory: {{ .Values.resources.limits.memory }}
         {{- end }}
         {{- if eq .Values.ENABLE_SEND_TX_API "YES" }}
           lifecycle:

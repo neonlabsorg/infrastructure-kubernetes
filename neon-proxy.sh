@@ -15,6 +15,7 @@ VAR_FILE="config.ini"
     exit 1
 }
 
+
 HELP="\nUsage: $0 [OPTION]...\n
   -f, Variabels file \n
   -i, Init setup \n
@@ -84,6 +85,7 @@ INDEXER_ENV=$(grep -Po 'IDX_\K.*' $VAR_FILE)
 [ ! $CLI_P_ENV ] || P_ENV=$CLI_P_ENV
 [ ! $CLI_KEY_DIR ] || KEY_DIR=$CLI_KEY_DIR
 [ ! $CLI_READONLY ] || PRX_ENABLE_SEND_TX_API="NO"
+[ $VAULT_NAMESPACE ] || VAULT_NAMESPACE=$NAMESPACE
 
 [ ! $DESTROY ] || {
   kubectl delete ns $NAMESPACE
@@ -150,6 +152,8 @@ INDEXER_ENV=$(grep -Po 'IDX_\K.*' $VAR_FILE)
   exit 1
 }
 
+
+
 [[ $VAULT_TYPE = "dev" ]] || [[ $VAULT_KEY_SHARED && $VAULT_KEY_THRESHOLD ]] || {
     echo -e "ERROR: Vault can't be run in \"$P_ENV\" environment without options. Check $VAR_FILE:\n
     VAULT_KEY_SHARED=$VAULT_KEY_SHARED
@@ -165,10 +169,6 @@ INDEXER_ENV=$(grep -Po 'IDX_\K.*' $VAR_FILE)
 }
 
 function installVault() {
-  [[ $VAULT_NAMESPACE ]] || {
-    VAULT_NAMESPACE=$NAMESPACE
-  }
-
    VAULT_CONFIG='ui = true
     listener "tcp" {
       tls_disable = 1
@@ -281,22 +281,6 @@ case $STORAGE_CLASS in
   "scw-bssd") DRIVER_NAME="csi.scaleway.com";;
 esac
 
-# helm upgrade --install --atomic storage storage/ \
-#   --namespace=$NAMESPACE \
-#   --wait-for-jobs \
-#   --history-max 3 \
-#   --set persistentVolume.storageClass=$STORAGE_CLASS \
-#   --set persistentVolume.fsDriver.name=$DRIVER_NAME \
-#   --set postgres.enabled=$POSTGRES_ENABLED \
-#   --set postgres.storageSize=$PROMETHEUS_STORAGE_SIZE \
-#   --set postgres.hostPath=$PROMETHEUS_STORAGE_DIR \
-#   --set prometheus.fsId=$PROMETHEUS_FS_ID \
-#   --set prometheus.enabled=$PROMETHEUS_ENABLED \
-#   --set prometheus.storageSize=$PROMETHEUS_STORAGE_SIZE \
-#   --set prometheus.hostPath=$PROMETHEUS_STORAGE_DIR \
-#   --set prometheus.fsId=$PROMETHEUS_FS_ID 
-
-
 # 1. Ingress-Nginx
 [[ $INGRESS_ENABLED = "false" ]] || {
   helm upgrade --install ingress-nginx ingress-nginx --repo https://kubernetes.github.io/ingress-nginx --namespace ingress-nginx --create-namespace
@@ -392,7 +376,11 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROO
     --set proxyCount=$PROXY_COUNT \
     --set keysPerProxy=$KEYS_PER_PROXY \
     --set image.tag=$PROXY_VER \
-    --set ENABLE_SEND_TX_API=$PRX_ENABLE_SEND_TX_API \
+    --set resources.requests.cpu=$PROXY_MIN_CPU \
+    --set resources.requests.memory=$PROXY_MIN_MEM \
+    --set resources.limits.cpu=$PROXY_MAX_CPU \
+    --set resources.limits.memory=$PROXY_MAX_MEM \
+    --set onePod.enabled=$ONE_PROXY_PER_NODE \
     --set environment=$P_ENV
 
     kubectl -n ${NAMESPACE} wait --for=condition=ready pod neon-proxy-0 || { 
@@ -400,45 +388,6 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROO
       exit 1 
     }
 }
-
-
-## 4. Monitoring
-# [[ $MONITORING_ENABLED = "false" ]] || {
-#   helm dependency build monitoring
-
-  # helm upgrade --install --atomic monitoring prometheus-community/prometheus -f monitoring/values.yaml \
-  #   --namespace $NAMESPACE --history-max 3 \
-  #   --set server.enabled=$PROMETHEUS_ENABLED \
-  #   --set alertmanager.enabled=$MONITORING_ENABLED \
-  #   --set configmapReload.enabled=$MONITORING_ENABLED \
-  #   --set kubeStateMetrics.enabled=$MONITORING_ENABLED \
-  #   --set nodeExporter.enabled=$MONITORING_ENABLED \
-  #   --set pushgateway.enabled=$MONITORING_ENABLED 
-
-  # helm upgrade --install --atomic monitoring monitoring \
-  #   --namespace $NAMESPACE --history-max 3 \
-  #   --set server.enabled=$PROMETHEUS_ENABLED \
-  #   --set alertmanager.enabled=$MONITORING_ENABLED \
-  #   --set alertmanager.storage.volumeClaimTemplate.spec.storageClassName=$STORAGE_CLASS \
-  #   --set alertmanager.storage.volumeClaimTemplate.spec.resources.requests.storage=$PROMETHEUS_STORAGE_SIZE \
-  #   --set configmapReload.enabled=$MONITORING_ENABLED \
-  #   --set kubeStateMetrics.enabled=$MONITORING_ENABLED \
-  #   --set nodeExporter.enabled=$MONITORING_ENABLED \
-  #   --set pushgateway.enabled=$MONITORING_ENABLED
-
-
-#   --set persistentVolume.fsDriver.name=$DRIVER_NAME \    
-#   --set persistentVolume.fsDriver.name=$DRIVER_NAME \
-#   --set postgres.enabled=$POSTGRES_ENABLED \
-#   --set postgres.hostPath=$PROMETHEUS_STORAGE_DIR \
-#   --set prometheus.fsId=$PROMETHEUS_FS_ID \
-#   --set prometheus.enabled=$PROMETHEUS_ENABLED \
-#   --set prometheus.storageSize=$PROMETHEUS_STORAGE_SIZE \
-#   --set prometheus.hostPath=$PROMETHEUS_STORAGE_DIR \
-#   --set prometheus.fsId=$PROMETHEUS_FS_ID 
-
-# }
-
 
 [ $VAULT_TYPE = "dev" ] || {
   echo -e "\n###################\n"

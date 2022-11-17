@@ -53,7 +53,8 @@ First, create a `sol` user with this command from your terminal:
 ##### 2. Install Solana
 Second, install Solana with this command:
 
-`sh -c "$(curl -sSfL https://release.solana.com/v1.8.0/install)"`
+`sh -c "$(curl -sSfL https://release.solana.com/v1.14.7/install)"`
+
 
 ##### 3. Create a Mount for Point for Ledger
 Third, create a mount point for ledger (not required if you are just running as a RPC node)

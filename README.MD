@@ -1,7 +1,7 @@
 ### Requirements for proxy-operator
 
 #### Solana RPC node:
-https://www.alchemy.com/overviews/solana-nodes#what-are-the-requirements-to-run-a-solana-rpc-node-2
+From https://docs.solana.com/running-validator/validator-reqs
 
 ##### Minimum Hardware Requirements
 Here are the minimum hardware requirements for running a Solana node in terms of memory, compute, storage, and operating system.

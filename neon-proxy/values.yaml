@@ -57,6 +57,8 @@ envFrom:
   - secretRef: 
       name: proxy-config
 
+ENABLE_SEND_TX_API: "YES"
+
 proxyEnv: {}
 
 solanaUrl: ""

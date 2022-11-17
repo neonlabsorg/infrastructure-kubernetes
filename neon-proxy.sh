@@ -381,6 +381,7 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROO
     --set resources.limits.cpu=$PROXY_MAX_CPU \
     --set resources.limits.memory=$PROXY_MAX_MEM \
     --set onePod.enabled=$ONE_PROXY_PER_NODE \
+    --set ENABLE_SEND_TX_API=$ENABLE_SEND_TX_API \
     --set environment=$P_ENV
 
     kubectl -n ${NAMESPACE} wait --for=condition=ready pod neon-proxy-0 || { 

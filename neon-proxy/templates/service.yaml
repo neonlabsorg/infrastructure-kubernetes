@@ -48,6 +48,6 @@ spec:
       protocol: {{ .Values.indexer.service.protocol }}
       name: {{ .Values.indexer.service.name }}
   selector:
+    application-pod: neon-proxy-indexer  
     {{- include "neon-proxy.selectorLabels" . | nindent 4 }}
-  selector:
-    application-pod: neon-proxy-indexer
+

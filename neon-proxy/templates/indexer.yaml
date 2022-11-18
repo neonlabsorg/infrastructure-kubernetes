@@ -32,6 +32,7 @@ spec:
             {{ end }}
           {{- end }}`}}       
       labels:
+        application-pod: neon-proxy-indexer
         {{- include "neon-proxy.selectorLabels" . | nindent 8 }}
     spec:
       serviceAccountName: {{ .Values.serviceAccount.name }}

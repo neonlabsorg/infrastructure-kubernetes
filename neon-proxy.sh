@@ -390,10 +390,10 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROO
 
 ## 4. Prometheus
 [[ $MONITORING_ENABLED == "false" ]] || { 
-  helm upgrade --install kube-state-metrics prometheus-community/kube-state-metrics --namespace=$NAMESPACE
+  #helm upgrade --install kube-state-metrics prometheus-community/kube-state-metrics --namespace=$NAMESPACE
 
   ###install metrics-server for resource monitoring
-  kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+  #kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
 
   helm upgrade --install loki grafana/loki-stack  \
     --namespace $NAMESPACE \
@@ -408,7 +408,7 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROO
     --set loki.persistence.size=$LOKI_STORAGE_SIZE \
     --set-file extraScrapeConfigs=prometheus/extraScrapeConfigs.yaml
 
-    echo -e "\nGRAFANA_PASSWORD:\n"
+    echo -e "\nGRAFANA_PASSWORD:"
     kubectl get secret --namespace $NAMESPACE loki-grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
 }
 

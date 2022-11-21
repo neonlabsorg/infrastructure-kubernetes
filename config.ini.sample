@@ -18,8 +18,8 @@ GRAFANA_ENABLED="false"
 ## Kluster type
 ## eks, gke, localhost
 CLUSTER_TYPE="localhost"
-## Storage class: host, efs, pd
-STORAGE_CLASS="host"
+## Storage class: host, standard, efs, pd, gp2
+STORAGE_CLASS="standard"
 
 ## Kubernetes namespace
 NAMESPACE='neon-proxy'

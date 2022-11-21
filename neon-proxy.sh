@@ -264,12 +264,10 @@ NEON_PROXY_ENABLED=$NEON_PROXY_ENABLED
 }
 
 # ## RUN
-[[ $VAULT_ENABLED = "false" ]] || helm repo add hashicorp https://helm.releases.hashicorp.com   ## Vault repo
-[[ $PROMETHEUS_ENABLED = "false" ]] || { 
-  helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-  helm repo add wiremind https://wiremind.github.io/wiremind-helm-charts
-}
-[[ $GRAFANA_ENABLED = "false" ]] || helm repo add grafana https://grafana.github.io/helm-charts
+[[ $VAULT_ENABLED == "false" ]] || helm repo add hashicorp https://helm.releases.hashicorp.com   ## Vault repo
+[[ $PROMETHEUS_ENABLED == "false" ]] || helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+[[ $GRAFANA_ENABLED == "false" && $LOKI_ENABLED == "false" ]] || helm repo add grafana https://grafana.github.io/helm-charts
+
 helm repo update
 
 # ## 0. Create namespace
@@ -282,7 +280,7 @@ case $STORAGE_CLASS in
 esac
 
 # 1. Ingress-Nginx
-[[ $INGRESS_ENABLED = "false" ]] || {
+[[ $INGRESS_ENABLED == "false" ]] || {
   helm upgrade --install ingress-nginx ingress-nginx --repo https://kubernetes.github.io/ingress-nginx --namespace ingress-nginx --create-namespace
 }
 
@@ -320,13 +318,13 @@ helm upgrade --install --atomic postgres postgres/ \
   --set migrate.enabled=$DB_MIGRATION \
   --set environment=$P_ENV
 
-[[ $POSTGRES_ENABLED = "false" ]] || kubectl -n ${NAMESPACE} wait --for=condition=ready pod postgres-0 || { 
+[[ $POSTGRES_ENABLED == "false" ]] || kubectl -n ${NAMESPACE} wait --for=condition=ready pod postgres-0 || { 
     echo "ERROR: Postgres installation failed"
     exit 1 
 }
 
 # ## 2. Vault
-if [[ $VAULT_TYPE = "dev" ]]
+if [[ $VAULT_TYPE == "dev" ]]
 then
   VAULT_ROOT_TOKEN=$VAULT_DEV_TOKEN
 else
@@ -364,7 +362,7 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROO
 
 
 ## 3. Proxy
-[[ $NEON_PROXY_ENABLED = "false" ]] || {
+[[ $NEON_PROXY_ENABLED == "false" ]] || {
   helm upgrade --install --atomic neon-proxy neon-proxy/ \
     --namespace=$NAMESPACE \
     --force \
@@ -390,7 +388,32 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROO
     }
 }
 
-[ $VAULT_TYPE = "dev" ] || {
+## 4. Prometheus
+[[ $MONITORING_ENABLED == "false" ]] || { 
+  helm upgrade --install kube-state-metrics prometheus-community/kube-state-metrics --namespace=$NAMESPACE
+
+  ###install metrics-server for resource monitoring
+  kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+
+  helm upgrade --install loki grafana/loki-stack  \
+    --namespace $NAMESPACE \
+    --history-max 3 \
+    --set grafana.enabled=$GRAFANA_ENABLED \
+    --set prometheus.enabled=$PROMETHEUS_ENABLED \
+    --set prometheus.alertmanager.persistentVolume.enabled=false \
+    --set prometheus.server.persistentVolume.enabled=false \
+    --set loki.enabled=$LOKI_ENABLED \
+    --set loki.persistence.enabled=true \
+    --set loki.persistence.storageClassName=$STORAGE_CLASS \
+    --set loki.persistence.size=$LOKI_STORAGE_SIZE \
+    --set-file extraScrapeConfigs=prometheus/extraScrapeConfigs.yaml
+
+    echo -e "\nGRAFANA_PASSWORD:\n"
+    kubectl get secret --namespace $NAMESPACE loki-grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
+}
+
+  
+[ $VAULT_TYPE == "dev" ] || {
   echo -e "\n###################\n"
   echo -e "WARNING: Please copy and keep $VAULT_KEYS_FILE in safe place!"
   echo -e "\n###################\n"

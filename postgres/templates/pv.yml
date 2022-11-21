@@ -11,7 +11,7 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   accessModes:
     - ReadWriteMany
-  {{- if eq .Values.persistence.storageClass "host" }}
+  {{- if eq .Values.persistence.storageClass "standard" }}
   hostPath:
     path: "{{ .Values.persistence.hostPath }}/{{ .Release.Namespace }}/"
   {{- end -}}

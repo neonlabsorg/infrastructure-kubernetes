@@ -10,7 +10,10 @@ POSTGRES_ENABLED="true"
 VAULT_ENABLED="true"
 NEON_PROXY_ENABLED="true"
 INGRESS_ENABLED="true"
-
+MONITORING_ENABLED="false"
+PROMETHEUS_ENABLED="false"
+LOKI_ENABLED="false"
+GRAFANA_ENABLED="false"
 
 ## Kluster type
 ## eks, gke, localhost
@@ -132,17 +135,7 @@ VAULT_HA_REPLICAS=2
 
 
 ################
-## Prometheus
+## Loki
 ################
-## Storage class: host, efs, pd
 
-#PROMETHEUS_FS_ID=
-PROMETHEUS_STORAGE_DIR="/data/prometheus"
-PROMETHEUS_STORAGE_SIZE="10Gi"
-
-
-################
-## Grafana
-################
-GRAFANA_USER="admin"
-GRAFANA_PASSWORD="admin"
+LOKI_STORAGE_SIZE="10Gi"

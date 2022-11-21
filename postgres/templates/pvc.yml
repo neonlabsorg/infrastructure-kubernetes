@@ -7,7 +7,7 @@ metadata:
     {{- include "postgres.labels" . | nindent 4 }}
 spec:
   storageClassName: {{ .Values.persistence.storageClass }}
-  {{- if eq .Values.persistence.storageClass "host" }}  
+  {{- if eq .Values.persistence.storageClass "standard" }}  
   accessModes:
     - ReadWriteMany
   {{- end }}

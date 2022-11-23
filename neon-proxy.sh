@@ -14,10 +14,7 @@ VAR_FILE="config.ini"
     echo "ERROR: Helm not installed"
     exit 1
 }
-[ "$(which jq)" ] || { 
-    echo "ERROR: jq not installed"
-    exit 1 
-}
+
 
 HELP="\nUsage: $0 [OPTION]...\n
   -f, Variabels file \n
@@ -34,7 +31,7 @@ HELP="\nUsage: $0 [OPTION]...\n
   "
 
 ## Get options
-while getopts ":f:k:n:p:v:S:s:e:yhmir" opt; do
+while getopts ":f:k:n:p:v:S:s:e:yhmird" opt; do
   case $opt in
     f) VAR_FILE=${OPTARG} ;;
     k) CLI_KEY_DIR=${OPTARG} ;;
@@ -48,6 +45,7 @@ while getopts ":f:k:n:p:v:S:s:e:yhmir" opt; do
     m) DB_MIGRATION="true" ;;  
     i) FIRST_RUN="true";DB_MIGRATION="true" ;;
     r) CLI_READONLY="true" ;;    
+    d) DESTROY="true" ;;    
     h) echo -e $HELP;exit 0 ;;
     *) echo "Invalid option -$OPTARG" >&2
     exit 1
@@ -87,6 +85,15 @@ INDEXER_ENV=$(grep -Po 'IDX_\K.*' $VAR_FILE)
 [ ! $CLI_P_ENV ] || P_ENV=$CLI_P_ENV
 [ ! $CLI_KEY_DIR ] || KEY_DIR=$CLI_KEY_DIR
 [ ! $CLI_READONLY ] || PRX_ENABLE_SEND_TX_API="NO"
+[ $VAULT_NAMESPACE ] || VAULT_NAMESPACE=$NAMESPACE
+
+[ ! $DESTROY ] || {
+  kubectl delete ns $NAMESPACE
+  kubectl delete pv $NAMESPACE-postgres-persistent-volume
+  kubectl delete MutatingWebhookConfiguration vault-agent-injector-cfg
+  exit 0
+}
+
 
 ## Check variables
 [ $FIRST_RUN ] || kubectl get ns $NAMESPACE || {
@@ -115,13 +122,13 @@ INDEXER_ENV=$(grep -Po 'IDX_\K.*' $VAR_FILE)
 }
 
 ## Check for operator keys
-[ $PRX_ENABLE_SEND_TX_API == "NO" ] || [ "$(ls $KEY_DIR/$KEY_MASK 2>/dev/null)" ] || { 
+[[ $PRX_ENABLE_SEND_TX_API == "NO" ]] || [ "$(ls $KEY_DIR/$KEY_MASK 2>/dev/null)" ] || { 
     echo "ERROR: Keypairs not found in $KEY_DIR/"
     exit 1 
 }
 
 ## Read key files to variable $OPERATOR_KEYS
-[ $PRX_ENABLE_SEND_TX_API == "NO" ] || {
+[[ $PRX_ENABLE_SEND_TX_API == "NO" ]] || {
   for k in $(awk '{print}' $KEY_DIR/$KEY_MASK );do OPERATOR_KEYS+=($k);done
 }
 
@@ -145,6 +152,8 @@ INDEXER_ENV=$(grep -Po 'IDX_\K.*' $VAR_FILE)
   exit 1
 }
 
+
+
 [[ $VAULT_TYPE = "dev" ]] || [[ $VAULT_KEY_SHARED && $VAULT_KEY_THRESHOLD ]] || {
     echo -e "ERROR: Vault can't be run in \"$P_ENV\" environment without options. Check $VAR_FILE:\n
     VAULT_KEY_SHARED=$VAULT_KEY_SHARED
@@ -160,10 +169,6 @@ INDEXER_ENV=$(grep -Po 'IDX_\K.*' $VAR_FILE)
 }
 
 function installVault() {
-  [[ $VAULT_NAMESPACE ]] || {
-    VAULT_NAMESPACE=$NAMESPACE
-  }
-
    VAULT_CONFIG='ui = true
     listener "tcp" {
       tls_disable = 1
@@ -195,10 +200,8 @@ function installVault() {
       --set server.standalone.config="$VAULT_CONFIG"
     sleep 20
     kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- vault operator init -key-shares=${VAULT_KEY_SHARED} -key-threshold=${VAULT_KEY_THRESHOLD} -format=json > $VAULT_KEYS_FILE
-    VAULT_UNSEAL_KEY=$(cat $VAULT_KEYS_FILE | jq -r ".unseal_keys_b64[]")
-    VAULT_ROOT_TOKEN=$(cat $VAULT_KEYS_FILE | jq -r ".root_token")
-    #VAULT_UNSEAL_KEY=$(cat $VAULT_KEYS_FILE | tr { '\n' | tr , '\n' | tr } '\n' | grep unseal_keys_b64 -A 1 | awk  -F'"' 'NR==2 {print $2}')
-    #VAULT_ROOT_TOKEN=$(cat $VAULT_KEYS_FILE | tr { '\n' | tr , '\n' | tr } '\n' | grep root_token | awk  -F'"' '{print $4}' ) 
+    VAULT_UNSEAL_KEY=$(cat $VAULT_KEYS_FILE | tr { '\n' | tr , '\n' | tr } '\n' | grep unseal_keys_b64 -A 1 | awk  -F'"' 'NR==2 {print $2}')
+    VAULT_ROOT_TOKEN=$(cat $VAULT_KEYS_FILE | tr { '\n' | tr , '\n' | tr } '\n' | grep root_token | awk  -F'"' '{print $4}' ) 
     
     kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault operator unseal ${VAULT_UNSEAL_KEY}"  
   elif [[ $VAULT_TYPE = "ha" ]]
@@ -215,10 +218,8 @@ function installVault() {
       kubectl -n ${VAULT_NAMESPACE} exec vault-$i -- /bin/sh -c "vault operator unseal ${VAULT_UNSEAL_KEY}"
     done    
     kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- vault operator init -key-shares=${VAULT_KEY_SHARED} -key-threshold=${VAULT_KEY_THRESHOLD} -format=json > $VAULT_KEYS_FILE
-    VAULT_UNSEAL_KEY=$(cat $VAULT_KEYS_FILE | jq -r ".unseal_keys_b64[]")
-    VAULT_ROOT_TOKEN=$(cat $VAULT_KEYS_FILE | jq -r ".root_token")    
-    #VAULT_UNSEAL_KEY=$(cat $VAULT_KEYS_FILE | tr { '\n' | tr , '\n' | tr } '\n' | grep unseal_keys_b64 -A 1 | awk  -F'"' 'NR==2 {print $2}')
-    #VAULT_ROOT_TOKEN=$(cat $VAULT_KEYS_FILE | tr { '\n' | tr , '\n' | tr } '\n' | grep root_token | awk  -F'"' '{print $4}' ) 
+    VAULT_UNSEAL_KEY=$(cat $VAULT_KEYS_FILE | tr { '\n' | tr , '\n' | tr } '\n' | grep unseal_keys_b64 -A 1 | awk  -F'"' 'NR==2 {print $2}')
+    VAULT_ROOT_TOKEN=$(cat $VAULT_KEYS_FILE | tr { '\n' | tr , '\n' | tr } '\n' | grep root_token | awk  -F'"' '{print $4}' ) 
   fi
 
 }
@@ -243,7 +244,7 @@ NEON_PROXY_ENABLED=$NEON_PROXY_ENABLED
 
 
 ## Simple check for keys and proxies values
-[ $PRX_ENABLE_SEND_TX_API == "NO" ] || {
+[[ $PRX_ENABLE_SEND_TX_API == "NO" ]] || {
   k=${#OPERATOR_KEYS[@]}
   p=$PROXY_COUNT
   kp=$(( k / p ))
@@ -263,12 +264,10 @@ NEON_PROXY_ENABLED=$NEON_PROXY_ENABLED
 }
 
 # ## RUN
-[[ $VAULT_ENABLED = "false" ]] || helm repo add hashicorp https://helm.releases.hashicorp.com   ## Vault repo
-[[ $PROMETHEUS_ENABLED = "false" ]] || { 
-  helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-  helm repo add wiremind https://wiremind.github.io/wiremind-helm-charts
-}
-[[ $GRAFANA_ENABLED = "false" ]] || helm repo add grafana https://grafana.github.io/helm-charts
+[[ $VAULT_ENABLED == "false" ]] || helm repo add hashicorp https://helm.releases.hashicorp.com   ## Vault repo
+[[ $PROMETHEUS_ENABLED == "false" ]] || helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+[[ $GRAFANA_ENABLED == "false" && $LOKI_ENABLED == "false" ]] || helm repo add grafana https://grafana.github.io/helm-charts
+
 helm repo update
 
 # ## 0. Create namespace
@@ -280,24 +279,8 @@ case $STORAGE_CLASS in
   "scw-bssd") DRIVER_NAME="csi.scaleway.com";;
 esac
 
-# helm upgrade --install --atomic storage storage/ \
-#   --namespace=$NAMESPACE \
-#   --wait-for-jobs \
-#   --history-max 3 \
-#   --set persistentVolume.storageClass=$STORAGE_CLASS \
-#   --set persistentVolume.fsDriver.name=$DRIVER_NAME \
-#   --set postgres.enabled=$POSTGRES_ENABLED \
-#   --set postgres.storageSize=$PROMETHEUS_STORAGE_SIZE \
-#   --set postgres.hostPath=$PROMETHEUS_STORAGE_DIR \
-#   --set prometheus.fsId=$PROMETHEUS_FS_ID \
-#   --set prometheus.enabled=$PROMETHEUS_ENABLED \
-#   --set prometheus.storageSize=$PROMETHEUS_STORAGE_SIZE \
-#   --set prometheus.hostPath=$PROMETHEUS_STORAGE_DIR \
-#   --set prometheus.fsId=$PROMETHEUS_FS_ID 
-
-
 # 1. Ingress-Nginx
-[[ $INGRESS_ENABLED = "false" ]] || {
+[[ $INGRESS_ENABLED == "false" ]] || {
   helm upgrade --install ingress-nginx ingress-nginx --repo https://kubernetes.github.io/ingress-nginx --namespace ingress-nginx --create-namespace
 }
 
@@ -335,13 +318,13 @@ helm upgrade --install --atomic postgres postgres/ \
   --set migrate.enabled=$DB_MIGRATION \
   --set environment=$P_ENV
 
-[[ $POSTGRES_ENABLED = "false" ]] || kubectl -n ${NAMESPACE} wait --for=condition=ready pod postgres-0 || { 
+[[ $POSTGRES_ENABLED == "false" ]] || kubectl -n ${NAMESPACE} wait --for=condition=ready pod postgres-0 || { 
     echo "ERROR: Postgres installation failed"
     exit 1 
 }
 
 # ## 2. Vault
-if [[ $VAULT_TYPE = "dev" ]]
+if [[ $VAULT_TYPE == "dev" ]]
 then
   VAULT_ROOT_TOKEN=$VAULT_DEV_TOKEN
 else
@@ -349,7 +332,7 @@ else
 fi
 
 echo "Run vault installation"
-[[ ! $VAULT_ENABLED = "true" && ! $FIRST_RUN ]] || {
+[[ ! $FIRST_RUN ]] || [[ ! $VAULT_ENABLED == "true" ]] || {
   installVault
 }
 
@@ -364,15 +347,14 @@ echo "Add keyes"
 if [[ $PRX_ENABLE_SEND_TX_API == "YES" ]]
 then
   echo "Read operator keys"
-  SECRET=()
   id=0
   for((i=0; i < ${#OPERATOR_KEYS[@]}; i+=$KEYS_PER_PROXY))
   do
     part=( "${OPERATOR_KEYS[@]:i:KEYS_PER_PROXY}" )
-    SECRET+=$(echo -n neon-proxy-${id}=\"${part[*]}\"; echo -n " " )
+    [ $id != 0 ] || kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROOT_TOKEN && vault kv put neon-proxy/proxy neon-proxy-${id}=\"${part[*]}\""
+    kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROOT_TOKEN && vault kv patch neon-proxy/proxy neon-proxy-${id}=\"${part[*]}\""
     id=$((id+1))
   done
-  kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROOT_TOKEN && echo '$SECRET' | xargs vault kv put neon-proxy/proxy"
 fi
 
 kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROOT_TOKEN && echo '$PROXY_ENV' | xargs vault kv put neon-proxy/proxy_env"
@@ -380,7 +362,7 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROO
 
 
 ## 3. Proxy
-[[ $NEON_PROXY_ENABLED = "false" ]] || {
+[[ $NEON_PROXY_ENABLED == "false" ]] || {
   helm upgrade --install --atomic neon-proxy neon-proxy/ \
     --namespace=$NAMESPACE \
     --force \
@@ -392,6 +374,11 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROO
     --set proxyCount=$PROXY_COUNT \
     --set keysPerProxy=$KEYS_PER_PROXY \
     --set image.tag=$PROXY_VER \
+    --set resources.requests.cpu=$PROXY_MIN_CPU \
+    --set resources.requests.memory=$PROXY_MIN_MEM \
+    --set resources.limits.cpu=$PROXY_MAX_CPU \
+    --set resources.limits.memory=$PROXY_MAX_MEM \
+    --set onePod.enabled=$ONE_PROXY_PER_NODE \
     --set ENABLE_SEND_TX_API=$PRX_ENABLE_SEND_TX_API \
     --set environment=$P_ENV
 
@@ -401,46 +388,32 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROO
     }
 }
 
+## 4. Prometheus
+[[ $MONITORING_ENABLED == "false" ]] || { 
+  #helm upgrade --install kube-state-metrics prometheus-community/kube-state-metrics --namespace=$NAMESPACE
 
-## 4. Monitoring
-[[ $MONITORING_ENABLED = "false" ]] || {
-  helm dependency build monitoring
+  ###install metrics-server for resource monitoring
+  #kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
 
-  # helm upgrade --install --atomic monitoring prometheus-community/prometheus -f monitoring/values.yaml \
-  #   --namespace $NAMESPACE --history-max 3 \
-  #   --set server.enabled=$PROMETHEUS_ENABLED \
-  #   --set alertmanager.enabled=$MONITORING_ENABLED \
-  #   --set configmapReload.enabled=$MONITORING_ENABLED \
-  #   --set kubeStateMetrics.enabled=$MONITORING_ENABLED \
-  #   --set nodeExporter.enabled=$MONITORING_ENABLED \
-  #   --set pushgateway.enabled=$MONITORING_ENABLED 
+  helm upgrade --install loki grafana/loki-stack  \
+    --namespace $NAMESPACE \
+    --history-max 3 \
+    --set grafana.enabled=$GRAFANA_ENABLED \
+    --set prometheus.enabled=$PROMETHEUS_ENABLED \
+    --set prometheus.alertmanager.persistentVolume.enabled=false \
+    --set prometheus.server.persistentVolume.enabled=false \
+    --set loki.enabled=$LOKI_ENABLED \
+    --set loki.persistence.enabled=true \
+    --set loki.persistence.storageClassName=$STORAGE_CLASS \
+    --set loki.persistence.size=$LOKI_STORAGE_SIZE \
+    --set-file extraScrapeConfigs=prometheus/extraScrapeConfigs.yaml
 
-  helm upgrade --install --atomic monitoring monitoring \
-    --namespace $NAMESPACE --history-max 3 \
-    --set server.enabled=$PROMETHEUS_ENABLED \
-    --set alertmanager.enabled=$MONITORING_ENABLED \
-    --set alertmanager.storage.volumeClaimTemplate.spec.storageClassName=$STORAGE_CLASS \
-    --set alertmanager.storage.volumeClaimTemplate.spec.resources.requests.storage=$PROMETHEUS_STORAGE_SIZE \
-    --set configmapReload.enabled=$MONITORING_ENABLED \
-    --set kubeStateMetrics.enabled=$MONITORING_ENABLED \
-    --set nodeExporter.enabled=$MONITORING_ENABLED \
-    --set pushgateway.enabled=$MONITORING_ENABLED
-
-
-#   --set persistentVolume.fsDriver.name=$DRIVER_NAME \    
-#   --set persistentVolume.fsDriver.name=$DRIVER_NAME \
-#   --set postgres.enabled=$POSTGRES_ENABLED \
-#   --set postgres.hostPath=$PROMETHEUS_STORAGE_DIR \
-#   --set prometheus.fsId=$PROMETHEUS_FS_ID \
-#   --set prometheus.enabled=$PROMETHEUS_ENABLED \
-#   --set prometheus.storageSize=$PROMETHEUS_STORAGE_SIZE \
-#   --set prometheus.hostPath=$PROMETHEUS_STORAGE_DIR \
-#   --set prometheus.fsId=$PROMETHEUS_FS_ID 
-
+    echo -e "\nGRAFANA_PASSWORD:"
+    kubectl get secret --namespace $NAMESPACE loki-grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
 }
 
-
-[ $VAULT_TYPE = "dev" ] || {
+  
+[ $VAULT_TYPE == "dev" ] || {
   echo -e "\n###################\n"
   echo -e "WARNING: Please copy and keep $VAULT_KEYS_FILE in safe place!"
   echo -e "\n###################\n"

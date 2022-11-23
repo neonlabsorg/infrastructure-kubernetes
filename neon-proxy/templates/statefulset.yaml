@@ -26,26 +26,41 @@ spec:
         vault.hashicorp.com/agent-inject-status: "update"
         vault.hashicorp.com/role: "neon-proxy"
         {{- if eq .Values.ENABLE_SEND_TX_API "YES" }} 
-        vault.hashicorp.com/agent-inject-secret-operator-kyes: "neon-proxy/proxy"
+        vault.hashicorp.com/agent-inject-secret-operator-keys: "neon-proxy/data/proxy"
         vault.hashicorp.com/agent-inject-template-operator-keys: |
-          {{`{{- with secret "neon-proxy/proxy" -}}
-          {{ .Data }}
-          {{- end }}`}}
+          {{`{{- with secret "neon-proxy/data/proxy" -}}
+            {{ range $k, $v := .Data.data }}
+            {{ $k }}: {{ $v }}
+            {{ end }}
+          {{- end -}}`}}
         {{- end }}
-        vault.hashicorp.com/agent-inject-secret-proxy-env: "neon-proxy/proxy_env"
+        vault.hashicorp.com/agent-inject-secret-proxy-env: "neon-proxy/data/proxy_env"
         vault.hashicorp.com/agent-inject-template-proxy-env: |
-          {{`{{- with secret "neon-proxy/proxy_env" -}}
-            {{ range $k, $v := .Data }}
+          {{`{{- with secret "neon-proxy/data/proxy_env" -}}
+            {{ range $k, $v := .Data.data }}
             export  {{ $k }}={{ $v }}
             {{ end }}
           {{- end }}`}}          
       labels:
+        application-pod: neon-proxy
         {{- include "neon-proxy.selectorLabels" . | nindent 8 }}
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
       serviceAccountName: {{ .Values.serviceAccount.name }}
+      {{- if .Values.onePod.enabled }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+                - key: "app.kubernetes.io/name"
+                  operator: In
+                  values:
+                  - neon-proxy
+            topologyKey: "kubernetes.io/hostname"
+      {{- end }}               
       containers:
         - name: proxy
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -69,9 +84,14 @@ spec:
           volumeMounts:
           {{- toYaml .Values.volumeMounts | nindent 10 }}
         {{- end }}
-        {{- with .Values.resources }}
+        {{- if .Values.resources }}
           resources:
-            {{- toYaml . | nindent 12 }}
+            requests:
+              cpu: {{ .Values.resources.requests.cpu }}
+              memory: {{ .Values.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.resources.limits.cpu }}
+              memory: {{ .Values.resources.limits.memory }}
         {{- end }}
         {{- if eq .Values.ENABLE_SEND_TX_API "YES" }}
           lifecycle:

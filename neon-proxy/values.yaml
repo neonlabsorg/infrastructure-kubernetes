@@ -4,21 +4,26 @@ keysPerProxy: 2
 clusterType: "localhost"
 environment: devnet
 
+onePod:
+  enabled: false
+
 ingress:
   enabled: true
   className: "nginx"
   host: ""
-
 
 image:
   repository: neonlabsorg/proxy
   pullPolicy: Always
   tag: "v0.11.2"
 
-# imageTools:
-#   repository: neonlabsorg/dops-tools
-#   pullPolicy: IfNotPresent
-#   tag: "latest"
+resources:
+  requests:
+    cpu: 500m
+    memory: 2G        
+  limits:
+    cpu: 1000m            
+    memory: 4G
 
 serviceAccount:
   create: true
@@ -52,11 +57,12 @@ envFrom:
   - secretRef: 
       name: proxy-config
 
+ENABLE_SEND_TX_API: "YES"
+
 proxyEnv: {}
 
 solanaUrl: ""
 ppsolanaUrl: ""
-
 
 volumes: 
   - name: proxy-keys-script

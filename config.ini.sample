@@ -10,13 +10,16 @@ POSTGRES_ENABLED="true"
 VAULT_ENABLED="true"
 NEON_PROXY_ENABLED="true"
 INGRESS_ENABLED="true"
-
+MONITORING_ENABLED="false"
+PROMETHEUS_ENABLED="false"
+LOKI_ENABLED="false"
+GRAFANA_ENABLED="false"
 
 ## Kluster type
 ## eks, gke, localhost
 CLUSTER_TYPE="localhost"
-## Storage class: host, efs, pd
-STORAGE_CLASS="host"
+## Storage class: host, standard, efs, pd, gp2
+STORAGE_CLASS="standard"
 
 ## Kubernetes namespace
 NAMESPACE='neon-proxy'
@@ -52,6 +55,13 @@ PROXY_COUNT=2
 KEYS_PER_PROXY=20
 
 #PROXY_HOST="neon-proxy.example.com"
+
+PROXY_MIN_CPU="500m"
+PROXY_MIN_MEM="1Gi"
+PROXY_MAX_CPU="1000m"
+PROXY_MAX_MEM="4Gi"
+
+ONE_PROXY_PER_NODE="false"
 
 ## PROXY ENV   
 PRX_FAUCET_URL=""
@@ -125,17 +135,7 @@ VAULT_HA_REPLICAS=2
 
 
 ################
-## Prometheus
+## Loki
 ################
-## Storage class: host, efs, pd
 
-#PROMETHEUS_FS_ID=
-PROMETHEUS_STORAGE_DIR="/data/prometheus"
-PROMETHEUS_STORAGE_SIZE="10Gi"
-
-
-################
-## Grafana
-################
-GRAFANA_USER="admin"
-GRAFANA_PASSWORD="admin"
+LOKI_STORAGE_SIZE="10Gi"

@@ -18,7 +18,7 @@ GRAFANA_ENABLED="false"
 ## Kluster type
 ## eks, gke, localhost
 CLUSTER_TYPE="localhost"
-## Storage class: host, standard, efs, pd, gp2
+## Storage class: nfs, host, standard, efs, pd, gp2
 STORAGE_CLASS="standard"
 
 ## Kubernetes namespace

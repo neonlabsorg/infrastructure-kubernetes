@@ -31,7 +31,7 @@ HELP="\nUsage: $0 [OPTION]...\n
   "
 
 ## Get options
-while getopts ":f:k:n:p:v:S:s:e:yhmird" opt; do
+while getopts ":f:k:n:p:v:S:s:yhmird" opt; do
   case $opt in
     f) VAR_FILE=${OPTARG} ;;
     k) CLI_KEY_DIR=${OPTARG} ;;
@@ -40,7 +40,6 @@ while getopts ":f:k:n:p:v:S:s:e:yhmird" opt; do
     v) CLI_VAULT_ROOT_TOKEN=${OPTARG} ;;    
     S) CLI_SOLANA_URL=${OPTARG} ;;
     s) CLI_PP_SOLANA_URL=${OPTARG} ;;
-    e) CLI_P_ENV=${OPTARG} ;;
     y) FORCE_APPLY=1 ;;
     m) DB_MIGRATION="true" ;;  
     i) FIRST_RUN="true";DB_MIGRATION="true" ;;
@@ -82,7 +81,6 @@ INDEXER_ENV=$(grep -Po 'IDX_\K.*' $VAR_FILE)
 [ ! $CLI_VAULT_ROOT_TOKEN ] || VAULT_ROOT_TOKEN=$CLI_VAULT_ROOT_TOKEN
 [ ! $CLI_SOLANA_URL ] || SOLANA_URL=$CLI_SOLANA_URL
 [ ! $CLI_PP_SOLANA_URL ] || PP_SOLANA_URL=$CLI_SOLANA_URL
-[ ! $CLI_P_ENV ] || P_ENV=$CLI_P_ENV
 [ ! $CLI_KEY_DIR ] || KEY_DIR=$CLI_KEY_DIR
 [ ! $CLI_READONLY ] || PRX_ENABLE_SEND_TX_API="NO"
 [ $VAULT_NAMESPACE ] || VAULT_NAMESPACE=$NAMESPACE
@@ -102,13 +100,6 @@ INDEXER_ENV=$(grep -Po 'IDX_\K.*' $VAR_FILE)
   exit 1
 }
 
-
-[ ! -z $P_ENV ] || {
-  echo "ERROR: Environment don't set. Check $VAR_FILE (P_ENV=...) or set with -e option "
-  echo -e $HELP
-  exit 1
-}
- 
 [ ! -z "$SOLANA_URL" ] || {
   echo "ERROR: SOLANA_URL cannot be empty! Use -S key to set SOLANA url"
   echo -e $HELP
@@ -140,25 +131,10 @@ INDEXER_ENV=$(grep -Po 'IDX_\K.*' $VAR_FILE)
     exit 1 
 }
 
-[[ $envs[*] =~ $P_ENV ]] || {
-  echo -e "ERROR: Unsupported environment value \"$P_ENV\".\nCheck $VAR_FILE ( P_ENV=...) or set with -e option "
-  echo -e $HELP
-  exit 1
-}
-
 [[ $vault_types[*] =~ $VAULT_TYPE ]] || {
   echo -e "ERROR: Unsupported vault type \"$VAULT_TYPE\".\nCheck $VAR_FILE ( VAULT_TYPE=...) "
   echo -e $HELP
   exit 1
-}
-
-
-
-[[ $VAULT_TYPE = "dev" ]] || [[ $VAULT_KEY_SHARED && $VAULT_KEY_THRESHOLD ]] || {
-    echo -e "ERROR: Vault can't be run in \"$P_ENV\" environment without options. Check $VAR_FILE:\n
-    VAULT_KEY_SHARED=$VAULT_KEY_SHARED
-    VAULT_KEY_THRESHOLD=$VAULT_KEY_THRESHOLD\n"
-    exit 1 
 }
 
 [[ $VAULT_TYPE = "dev" ]] || [[ -f "$VAULT_KEYS_FILE" && -s "$VAULT_KEYS_FILE" ]] || {
@@ -228,7 +204,6 @@ function installVault() {
 ## Get ready for start and show values
 echo -e "You can run this script with -h option\n
  ------------- Values -------------
-       Environment: $P_ENV
          Namespase: $NAMESPACE
     Keys directory: ${PWD}/${KEY_DIR} -- (found ${#OPERATOR_KEYS[@]} keys)
     Proxy replicas: $PROXY_COUNT
@@ -273,12 +248,6 @@ helm repo update
 # ## 0. Create namespace
 kubectl create namespace $NAMESPACE 2>/dev/null
 
-case $STORAGE_CLASS in
-  "efs") DRIVER_NAME="efs.csi.aws.com";;
-  "pd") DRIVER_NAME="pd.csi.storage.gke.io";;
-  "scw-bssd") DRIVER_NAME="csi.scaleway.com";;
-esac
-
 # 1. Ingress-Nginx
 [[ $INGRESS_ENABLED == "false" ]] || {
   helm upgrade --install ingress-nginx ingress-nginx --repo https://kubernetes.github.io/ingress-nginx --namespace ingress-nginx --create-namespace
@@ -310,13 +279,9 @@ helm upgrade --install --atomic postgres postgres/ \
   --set postgres.password=$POSTGRES_PASSWORD \
   --set service.port=$POSTGRES_PORT \
   --set postgres.ssl=$POSTGRES_SSL \
-  --set persistence.storageClass=$STORAGE_CLASS \
-  --set fsDriver.name=$DRIVER_NAME \
-  --set fsDriver.fsId=$POSTGRES_FS_ID \
-  --set persistence.hostPath=$POSTGRES_STORAGE_DIR \
+  --set persistence.storageClass=$POSTGRES_STORAGE_CLASS \
   --set persistence.size=$POSTGRES_STORAGE_SIZE \
-  --set migrate.enabled=$DB_MIGRATION \
-  --set environment=$P_ENV
+  --set migrate.enabled=$DB_MIGRATION 
 
 [[ $POSTGRES_ENABLED == "false" ]] || kubectl -n ${NAMESPACE} wait --for=condition=ready pod postgres-0 || { 
     echo "ERROR: Postgres installation failed"
@@ -379,8 +344,7 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROO
     --set resources.limits.cpu=$PROXY_MAX_CPU \
     --set resources.limits.memory=$PROXY_MAX_MEM \
     --set onePod.enabled=$ONE_PROXY_PER_NODE \
-    --set ENABLE_SEND_TX_API=$PRX_ENABLE_SEND_TX_API \
-    --set environment=$P_ENV
+    --set ENABLE_SEND_TX_API=$PRX_ENABLE_SEND_TX_API
 
     kubectl -n ${NAMESPACE} wait --for=condition=ready pod neon-proxy-0 || { 
       echo "ERROR: Proxy installation failed"
@@ -404,7 +368,7 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROO
     --set prometheus.server.persistentVolume.enabled=false \
     --set loki.enabled=$LOKI_ENABLED \
     --set loki.persistence.enabled=true \
-    --set loki.persistence.storageClassName=$STORAGE_CLASS \
+    --set loki.persistence.storageClassName=$LOKI_STORAGE_CLASS \
     --set loki.persistence.size=$LOKI_STORAGE_SIZE \
     --set-file extraScrapeConfigs=prometheus/extraScrapeConfigs.yaml
 

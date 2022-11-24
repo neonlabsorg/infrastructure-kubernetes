@@ -151,3 +151,30 @@ In this option, I didn't have any operator key, and the proxy runs in read only 
    
 
 
+## NFS Storage class example
+
+NFS Server must be installed
+
+[Ubuntu example](https://ubuntu.com/server/docs/service-nfs/)
+
+Install NFS provisioner
+
+    helm repo add nfs-subdir-external-provisioner https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner
+
+    helm install nfs-subdir-external-provisioner nfs-subdir-external-provisioner/nfs-subdir-external-provisioner \
+        --set nfs.server=x.x.x.x \
+        --set nfs.path=/exported/path
+
+
+Check name of NFS StorageClass
+
+    kubectl get storageclass
+
+In config.ini files set varables 
+
+    POSTGRES_STORAGE_CLASS="nfs-client"
+
+If you need monitoring part
+
+    PROMETHEUS_STORAGE_CLASS="nfs-client"
+    LOKI_STORAGE_CLASS="nfs-client"

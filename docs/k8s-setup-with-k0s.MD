@@ -2,11 +2,11 @@
 
 Requirements:
 
-1. K8s command line tool. [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/)
+1. K8s command line tool: [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/)
 
-2. Helm, that is a tool to help you define, install, and upgrade applications running on Kubernetes. [helm](https://helm.sh/docs/intro/install/)
+2. Helm, that is a tool to help you define, install, and upgrade applications running on Kubernetes: [helm](https://helm.sh/docs/intro/install/)
 
-K0s is a popular project and simpel way to create kubernetes cluster, and ready for production usage, it's easy and smoothly.
+K0s is a popular project and simple way to create kubernetes cluster, and ready for production usage, it's easy and smoothly.
 
 In this guide, we'll give you all information to get started with kubernetes. 
 

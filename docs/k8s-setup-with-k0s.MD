@@ -98,6 +98,8 @@ kubectl get nodes
 
 Additional configurations can be founded [here] (https://docs.k0sproject.io/latest/high-availability/) in official k0s doc page.
 
+## Now you have your first kubernetes cluster !
+
 
 
 

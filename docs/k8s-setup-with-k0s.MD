@@ -2,9 +2,11 @@
 
 Requirements:
 
-1. K8s command line tool: [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/)
+1. Linux ubuntu based  / Centos. For MacOS, please check this [guide](https://github.com/neonlabsorg/infrastructure-kubernetes/blob/main/docs/k8s-macos.MD)
 
-2. Helm, that is a tool to help you define, install, and upgrade applications running on Kubernetes: [helm](https://helm.sh/docs/intro/install/)
+2. K8s command line tool: [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/)
+
+3. Helm, that is a tool to help you define, install, and upgrade applications running on Kubernetes: [helm](https://helm.sh/docs/intro/install/)
 
 K0s is a popular project and simple way to create kubernetes cluster, and ready for production usage, it's easy and smoothly.
 
@@ -13,6 +15,7 @@ In this guide, we'll give you all information to get started with kubernetes.
 The k0s is a single binary that includes everything that you need to run Kubernetes on any system that includes Linux kernel.
 
 Steps:
+
 1. Download binary.
 2. Create a k8s control-plane server.
 3. Create and add a worker/node.

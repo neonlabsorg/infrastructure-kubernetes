@@ -91,6 +91,8 @@ A system account, which simulates the owners’ wallet, is also used to transfer
 - Kubernetes already installed (at least 1.21)
 - Helm 3, Kubectl
 
+If you are starting with kubernetes, please check [this getting started with k8s](https://github.com/neonlabsorg/infrastructure-kubernetes/blob/main/docs/k8s-setup-with-k0s.MD)
+
 ### Environments setup
 
 Copy and set variables in config file

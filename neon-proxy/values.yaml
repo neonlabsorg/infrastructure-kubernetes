@@ -30,6 +30,12 @@ serviceAccount:
   annotations: {}
   name: "neon-proxy-sa"
 
+securityContext:
+  seccompProfile:
+    type: RuntimeDefault  
+  allowPrivilegeEscalation: false
+  #runAsUser: 2000
+
 podAnnotations: {}
 
 service:

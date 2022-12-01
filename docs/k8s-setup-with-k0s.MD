@@ -102,6 +102,15 @@ Wait some moments and now you can see your node added to the k8s cluster, bringi
 sudo k0s kubectl get nodes
 ```
 
+Copy your admin.conf in order to use kubectl directly:
+
+```bash
+sudo cp /var/lib/k0s/pki/admin.conf ~/admin.conf
+export KUBECONFIG=~/admin.conf
+```
+
+Now you can run kubectl command without "sudo k0s"!
+
 Additional configurations can be founded [here] (https://docs.k0sproject.io/latest/high-availability/) in official k0s doc page.
 
 ## Now you have your first kubernetes cluster !

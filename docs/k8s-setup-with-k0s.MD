@@ -74,6 +74,8 @@ This token have all information to join the cluster.
 First, log in your control-plane/controlle node and generate the "main" token:
 
 ```bash
+sudo k0s stop
+sudo k0s start
 k0s token create --role=worker
 ```
 

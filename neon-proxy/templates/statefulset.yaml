@@ -66,6 +66,8 @@ spec:
       containers:
         - name: proxy
           securityContext:
+            allowPrivilegeEscalation: false
+            privileged: false
             seccompProfile:
               type: RuntimeDefault
             {{- toYaml .Values.securityContext | nindent 12 }}

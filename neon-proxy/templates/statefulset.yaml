@@ -10,6 +10,7 @@ metadata:
     {{- end }}
   {{- with .Values.annotations }}
   annotations:
+    kubernetes.io/psp: restricted
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:

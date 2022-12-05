@@ -21,6 +21,7 @@ spec:
   template:
     metadata:
       annotations:
+        kubernetes.io/psp: restricted
         checksum/secret: {{ include (print $.Template.BasePath "/proxy-config.yaml") . | sha256sum }}  
         vault.hashicorp.com/agent-inject: "true"
         vault.hashicorp.com/agent-inject-status: "update"

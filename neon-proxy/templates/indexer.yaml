@@ -44,6 +44,8 @@ spec:
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
+            allowPrivilegeEscalation: false
+            privileged: false
             seccompProfile:
               type: RuntimeDefault
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"

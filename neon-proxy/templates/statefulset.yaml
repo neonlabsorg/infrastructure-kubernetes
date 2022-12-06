@@ -66,10 +66,6 @@ spec:
       containers:
         - name: proxy
           securityContext:
-            allowPrivilegeEscalation: false
-            privileged: false
-            seccompProfile:
-              type: RuntimeDefault
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}

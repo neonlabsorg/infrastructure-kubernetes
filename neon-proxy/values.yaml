@@ -32,7 +32,8 @@ serviceAccount:
 
 securityContext:
   seccompProfile:
-    type: RuntimeDefault  
+    type: RuntimeDefault
+  privileged: false
   allowPrivilegeEscalation: false
   #runAsUser: 2000
 

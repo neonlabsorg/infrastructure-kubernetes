@@ -92,7 +92,7 @@ indexer:
   service:
     name: indexer-svc
     type: ClusterIP
-    port: 8887
+    port: 8888
     protocol: TCP
   LOG_FULL_OBJECT_INFO: ""
   GATHER_STATISTICS: ""

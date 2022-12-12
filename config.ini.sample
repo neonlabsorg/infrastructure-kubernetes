@@ -26,7 +26,7 @@ INGRESS_CLASS="nginx"
 ## There is an option to use the -S option to set this variable
 SOLANA_URL=
 ## Solana RPC url. If disabled will be the same as $SOLANA_URL
-PP_SOLANA_URL=
+#PP_SOLANA_URL=
 
 
 ################
@@ -93,30 +93,28 @@ POSTGRES_USER="neon-proxy"
 POSTGRES_ADMIN_USER="postgres"
 #POSTGRES_ADMIN_PASSWD=""
 
-POSTGRES_STORAGE_CLASS=""
-POSTGRES_STORAGE_SIZE="50Gi"
+## Skiped if POSTGRES_ENABLED="false"
+#POSTGRES_FS_ID=
+POSTGRES_STORAGE_CLASS="default"
+POSTGRES_STORAGE_SIZE="10Gi"
 
 
 ################
 ## Vault
 ################
 ## "dev","standalone" or "ha"
-VAULT_TYPE="dev"
+VAULT_TYPE="standalone"
 
 VAULT_DEV_TOKEN="root"
-#VAULT_ROOT_TOKEN=
-#VAULT_UNSEAL_KEY=
+#VAULT_ROOT_TOKEN=""
+#VAULT_UNSEAL_KEY=""
 VAULT_KEYS_FILE="vault-keys.json"
-
-## If disabled, vault will be installed in same namesapce (not recommended)
-#VAULT_NAMESPACE="vault"
 
 ## -key-shares (int: 5) - Number of key shares to split the generated master key into. This is the number of "unseal keys" to generate. 
 VAULT_KEY_SHARED=1
 
 ## -key-threshold (int: 3) - Number of key shares required to reconstruct the root key. This must be less than or equal to -key-shares
 VAULT_KEY_THRESHOLD=1
-
 VAULT_HA_REPLICAS=2
 
 
@@ -124,12 +122,16 @@ VAULT_HA_REPLICAS=2
 ## Prometheus
 ################
 
-PROMETHEUS_STORAGE_CLASS=""
+#PROMETHEUS_FS_ID=
+PROMETHEUS_STORAGE_CLASS="default"
 PROMETHEUS_STORAGE_SIZE="10Gi"
 
 ################
-## Loki
+## Grafana
 ################
 
-LOKI_STORAGE_CLASS=""
-LOKI_STORAGE_SIZE="10Gi"
+#PROMETHEUS_FS_ID=
+GRAFANA_STORAGE_CLASS="default"
+GRAFANA_STORAGE_SIZE="10Gi"
+GRAFANA_ADMIN_USER="admin"
+GRAFANA_ADMIN_PASSWD="grafana"

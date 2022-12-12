@@ -2,7 +2,7 @@
   honor_timestamps: true
   scrape_interval: 5s
   scrape_timeout: 5s
-  metrics_path: /proxy1
+  metrics_path: /metrics
   scheme: http
   static_configs:
   - targets:
@@ -12,8 +12,9 @@
   honor_timestamps: true
   scrape_interval: 5s
   scrape_timeout: 5s
-  metrics_path: /
+  metrics_path: /metrics
   scheme: http
   static_configs:
   - targets:
-    - indexer-svc.neon-proxy.svc.cluster.local:8887
+    - indexer-svc.neon-proxy.svc.cluster.local:8888
+

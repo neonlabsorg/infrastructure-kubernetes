@@ -113,12 +113,11 @@ You can set some important variabels in command line;
     -f, Variabels file
     -i, Init setup
     -r, Read-only mode
-    -S, SOLANA_URL 
-    -s, PP_SOLANA_URL 
-    -e, Set environment ("devnet", "testnet" or "mainnet")  
-    -d, Postgres password
+    -S, SOLANA_URL
+    -s, PP_SOLANA_URL
+    -p, Set postgres admin password (can be used only with -i option)
     -m, Use this option to set migrations
-    -k, operator kyes dir
+    -k, Set keys directory
     -y, Assume "yes" as answer, run non-interactively
 
 First setup you need run with -i key
@@ -177,4 +176,4 @@ In config.ini files set varables
 If you need monitoring part
 
     PROMETHEUS_STORAGE_CLASS="nfs-client"
-    LOKI_STORAGE_CLASS="nfs-client"
+    GRAFANA_STORAGE_CLASS="nfs-client"

@@ -46,4 +46,8 @@ dashboards:
     neon-proxy-1:
       gnetId: 17591
       datasource: Prometheus
+    neon-proxy-indexer:
+      gnetId: 17592
+      datasource: Prometheus
+
       

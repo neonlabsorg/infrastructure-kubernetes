@@ -17,8 +17,4 @@ tmp.txt
 
 config*.ini
 
-vault-keys.json
-
-#Work in progress
-monitoring
-storage
+*vault-keys*.json*

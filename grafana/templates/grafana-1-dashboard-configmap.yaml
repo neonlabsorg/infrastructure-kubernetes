@@ -1,9 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: grafana-dashboards
-  labels:
-    grafana_dashboard: "1"
-data:
-  kubernetes-1.json: |
-{{ .Files.Get "grafana-dashboards/import-dash1.json" | indent 4 }}

@@ -58,12 +58,7 @@
    
 3. **Install**
 - Copy config.ini.sample to config.ini and check the following variables:
-      ```
-      P_ENV
-      ```
       
-       Which environment you will connect to, devnet, testnet or mainnet.
-       
  - In next session you can just disable or enable some features like:
    
    `INGRESS_ENABLED="false" `
@@ -77,11 +72,7 @@
    
    `NEON_PROXY_ENABLED="true"`
    This section enable neonlabs proxy container.
-   
-   ***Cluster type***, for Kubernetes provider specific sets, it should be EKS for AWS (Elastic Kubernetes Service), GKE (Google Kubernetes Engine), or local stand k8s setup with localhost value like:
-
-       CLUSTER_TYPE="localhost" #options are: eks,gke or localhost.
-       
+  
    ***NAMESPACE*** section:
        `NAMESPACE='neon-proxy'`
         This is a namespace that proxy will be deployed inside your cluster, if you want to change it, just modify this value for your choice.

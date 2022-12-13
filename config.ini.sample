@@ -1,25 +1,11 @@
-################
-## General
-################
-## Environment
-## Set "devnet", "testnet" or "mainnet" environment
-P_ENV="devnet"
-
-##
-POSTGRES_ENABLED="true"
-VAULT_ENABLED="true"
 NEON_PROXY_ENABLED="true"
-INGRESS_ENABLED="true"
+VAULT_ENABLED="true"
+POSTGRES_ENABLED="true"
+INGRESS_ENABLED="false"
 MONITORING_ENABLED="false"
 PROMETHEUS_ENABLED="false"
 LOKI_ENABLED="false"
 GRAFANA_ENABLED="false"
-
-## Kluster type
-## eks, gke, localhost
-CLUSTER_TYPE="localhost"
-## Storage class: host, standard, efs, pd, gp2
-STORAGE_CLASS="standard"
 
 ## Kubernetes namespace
 NAMESPACE='neon-proxy'
@@ -34,7 +20,6 @@ KEY_MASK="id*.json"
 ## "nginx" - for "nginx-ingress"
 INGRESS_CLASS="nginx"
 
-
 ################
 ## SOLANA
 ################
@@ -47,7 +32,7 @@ SOLANA_URL=
 ################
 ## PROXY
 ################
-PROXY_VER="v0.13.0"
+PROXY_VER="v0.14.1"
 ## Proxy pods count
 PROXY_COUNT=2
 
@@ -81,6 +66,7 @@ PRX_NEON_CLI_TIMEOUT="10"
 PRX_CONFIRM_TIMEOUT="15"
 PRX_PERM_ACCOUNT_LIMIT="6"
 PRX_ENABLE_SEND_TX_API="YES"
+PRX_GATHER_STATISTICS="YES"
 
 ## INDEXER ENV
 IDX_GATHER_STATISTICS="YES"
@@ -102,40 +88,50 @@ POSTGRES_USER="neon-proxy"
 ## If disabled, the password will be randomly generated.
 ## Use this command to show password:
 ## kubectl get secret postgres-secret --template={{.data.POSTGRES_PASSWORD}} -n neon-proxy | base64 --decode
-#POSTGRES_PASSWORD=<some password>
+#POSTGRES_PASSWORD="password"
 
 POSTGRES_ADMIN_USER="postgres"
 #POSTGRES_ADMIN_PASSWD=""
 
+## Skiped if POSTGRES_ENABLED="false"
 #POSTGRES_FS_ID=
-POSTGRES_STORAGE_DIR="/data/postgres"
-POSTGRES_STORAGE_SIZE="50Gi"
+POSTGRES_STORAGE_CLASS="default"
+POSTGRES_STORAGE_SIZE="10Gi"
 
 
 ################
 ## Vault
 ################
 ## "dev","standalone" or "ha"
-VAULT_TYPE="dev"
+VAULT_TYPE="standalone"
 
 VAULT_DEV_TOKEN="root"
-#VAULT_ROOT_TOKEN=
+#VAULT_ROOT_TOKEN=""
+#VAULT_UNSEAL_KEY=""
 VAULT_KEYS_FILE="vault-keys.json"
-
-## If disabled, vault will be installed in same namesapce (not recommended)
-#VAULT_NAMESPACE="vault"
 
 ## -key-shares (int: 5) - Number of key shares to split the generated master key into. This is the number of "unseal keys" to generate. 
 VAULT_KEY_SHARED=1
 
 ## -key-threshold (int: 3) - Number of key shares required to reconstruct the root key. This must be less than or equal to -key-shares
 VAULT_KEY_THRESHOLD=1
-
 VAULT_HA_REPLICAS=2
 
 
 ################
-## Loki
+## Prometheus
 ################
 
-LOKI_STORAGE_SIZE="10Gi"
+#PROMETHEUS_FS_ID=
+PROMETHEUS_STORAGE_CLASS="default"
+PROMETHEUS_STORAGE_SIZE="10Gi"
+
+################
+## Grafana
+################
+
+#PROMETHEUS_FS_ID=
+GRAFANA_STORAGE_CLASS="default"
+GRAFANA_STORAGE_SIZE="10Gi"
+GRAFANA_ADMIN_USER="admin"
+GRAFANA_ADMIN_PASSWD="grafana"

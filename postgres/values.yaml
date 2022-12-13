@@ -35,13 +35,9 @@ service:
 #     protocol: 
 
 persistence:
+  accessModes: ReadWriteOnce
   size: "50Gi"
-  storageClass: "host"
-  hostPath: "/data/postgresql/"
-
-fsDriver:
-  name: "efs.csi.aws.com"
-  fsId: ""
+  storageClass: ""
 
 env:
   - name: MAX_CONNECTIONS
@@ -64,17 +60,3 @@ volumeMounts:
     subPath: vault.sql
   - name: postgresdata
     mountPath: /var/lib/postgresql/data/
-
-    
-volumes:
-  - name: postgres-config
-    configMap:
-      name: postgres-config
-
-
-
-
-annotations: {}
-labels: {}
-podAnnotations: {}
-podLabels: {}

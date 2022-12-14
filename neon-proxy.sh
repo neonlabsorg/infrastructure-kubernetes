@@ -15,6 +15,11 @@ VAR_FILE="config.ini"
     exit 1
 }
 
+[ "$(which jq)" ] || { 
+    echo "ERROR: jq not installed"
+    exit 1 
+}
+
 HELP="\nUsage: $0 [OPTION]...\n
   -f, Variabels file \n
   -i, Init setup \n
@@ -156,7 +161,7 @@ function installVault() {
 
   if [[ $VAULT_TYPE = "dev" ]]
   then
-    VAULT_ROOT_TOKEN=$VAULT_DEV_TOKEN
+    VAULT_ROOT_TOKEN="$VAULT_DEV_TOKEN"
     helm upgrade --install --atomic vault hashicorp/vault -f vault/values.yaml \
       --namespace=$VAULT_NAMESPACE  --create-namespace --history-max 3 \
       --set server.dev.devRootToken=$VAULT_ROOT_TOKEN \
@@ -172,8 +177,8 @@ function installVault() {
       --set server.standalone.config="$VAULT_CONFIG" 1>/dev/null
     sleep 20
     kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- vault operator init -key-shares=${VAULT_KEY_SHARED} -key-threshold=${VAULT_KEY_THRESHOLD} -format=json > $VAULT_KEYS_FILE
-    VAULT_UNSEAL_KEY=$(cat $VAULT_KEYS_FILE | tr { '\n' | tr , '\n' | tr } '\n' | grep unseal_keys_b64 -A 1 | awk  -F'"' 'NR==2 {print $2}')
-    VAULT_ROOT_TOKEN=$(cat $VAULT_KEYS_FILE | tr { '\n' | tr , '\n' | tr } '\n' | grep root_token | awk  -F'"' '{print $4}' ) 
+    VAULT_UNSEAL_KEY="$(cat $VAULT_KEYS_FILE | jq -r '.unseal_keys_b64[]')"
+    VAULT_ROOT_TOKEN="$(cat $VAULT_KEYS_FILE | jq -r '.root_token')"
     
     kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault operator unseal ${VAULT_UNSEAL_KEY}" 1>/dev/null
   elif [[ $VAULT_TYPE = "ha" ]]
@@ -190,8 +195,8 @@ function installVault() {
       kubectl -n ${VAULT_NAMESPACE} exec vault-$i -- /bin/sh -c "vault operator unseal ${VAULT_UNSEAL_KEY}" 1>/dev/null
     done    
     kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- vault operator init -key-shares=${VAULT_KEY_SHARED} -key-threshold=${VAULT_KEY_THRESHOLD} -format=json > $VAULT_KEYS_FILE
-    VAULT_UNSEAL_KEY=$(cat $VAULT_KEYS_FILE | tr { '\n' | tr , '\n' | tr } '\n' | grep unseal_keys_b64 -A 1 | awk  -F'"' 'NR==2 {print $2}')
-    VAULT_ROOT_TOKEN=$(cat $VAULT_KEYS_FILE | tr { '\n' | tr , '\n' | tr } '\n' | grep root_token | awk  -F'"' '{print $4}' ) 
+    VAULT_UNSEAL_KEY="$(cat $VAULT_KEYS_FILE | jq -r '.unseal_keys_b64[]')"
+    VAULT_ROOT_TOKEN="$(cat $VAULT_KEYS_FILE | jq -r '.root_token')"
   fi
 
 }
@@ -285,21 +290,23 @@ helm upgrade --install --atomic postgres postgres/ \
 
 # ## 2. Vault
 echo "Setup secrets..."
-[[ ! $FIRST_RUN ]] || [[ ! $VAULT_ENABLED == "true" ]] || {
+[[ ! $FIRST_RUN ]] || [[  $VAULT_ENABLED != "true" ]] || {
   [[ ! -f "$VAULT_KEYS_FILE" ]] || { 
     echo "Found $VAULT_KEYS_FILE -- Backuping..." 
-    mv $VAULT_KEYS_FILE ${VAULT_KEYS_FILE}_bkp
+    cp $VAULT_KEYS_FILE ${VAULT_KEYS_FILE}_bkp
   }
-  echo "Run Vault installation"
-  installVault
+  [[ $(kubectl -n ${VAULT_NAMESPACE} get po vault-0 2>/dev/null)  ]] || {
+    echo "Run Vault installation"
+    installVault
+  }
 }
 
 echo "Check vault token"
 [[ $VAULT_TYPE != "dev" ]] || VAULT_ROOT_TOKEN=$VAULT_DEV_TOKEN
 [[ $VAULT_TYPE == "dev" ]] || {
-  [[ $VAULT_ROOT_TOKEN ]] || [[ ! -f "$VAULT_KEYS_FILE" ]] || VAULT_ROOT_TOKEN=$(cat $VAULT_KEYS_FILE | tr { '\n' | tr , '\n' | tr } '\n' | grep root_token | awk  -F'"' '{print $4}' )
+  [[ $VAULT_ROOT_TOKEN ]] || [[ ! -f "$VAULT_KEYS_FILE" ]] || VAULT_ROOT_TOKEN="$(cat $VAULT_KEYS_FILE | jq -r '.root_token')"
   [[ $VAULT_UNSEAL_KEY ]] || [[ ! -f "$VAULT_KEYS_FILE" ]] || {
-    VAULT_UNSEAL_KEY=$(cat $VAULT_KEYS_FILE | tr { '\n' | tr , '\n' | tr } '\n' | grep unseal_keys_b64 -A 1 | awk  -F'"' 'NR==2 {print $2}')
+    VAULT_UNSEAL_KEY="$(cat $VAULT_KEYS_FILE | jq -r '.unseal_keys_b64[]')"
     [[ $VAULT_UNSEAL_KEY ]] || echo -e "\n###################\nWARNING: VAULT_UNSEAL_KEY no foud! Please make sure Vault is available\n###################\n"
     kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault operator unseal ${VAULT_UNSEAL_KEY}" 
   }

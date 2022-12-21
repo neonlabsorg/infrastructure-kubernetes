@@ -13,6 +13,7 @@ NAMESPACE='neon-proxy'
 ## Operator keys directory and search mask
 KEY_DIR='operator-keypairs'
 KEY_MASK="id*.json"
+INDEXER_KEY_FILE="id3.json"
 
 ## Example 
 ## "gce" - for GKE

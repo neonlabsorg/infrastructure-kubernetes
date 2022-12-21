@@ -367,6 +367,7 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | 
     --set resources.limits.cpu=$PROXY_MAX_CPU \
     --set resources.limits.memory=$PROXY_MAX_MEM \
     --set onePod.enabled=$ONE_PROXY_PER_NODE \
+    --set-file indexer.indexerKey=$KEY_DIR/$INDEXER_KEY_FILE \
     --set ENABLE_SEND_TX_API=$PRX_ENABLE_SEND_TX_API
 
     kubectl -n ${NAMESPACE} wait --for=condition=ready pod neon-proxy-0 --timeout=1m || { 

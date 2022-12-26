@@ -50,4 +50,13 @@ dashboards:
       gnetId: 17592
       datasource: Prometheus
 
-      
+ingress:
+  enabled: false
+  annotations: {}
+  labels: {}
+  path: /grafana
+  pathType: Prefix
+  hosts:
+    - chart-example.local
+  extraPaths: []
+  tls: []

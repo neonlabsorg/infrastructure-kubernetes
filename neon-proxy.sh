@@ -238,6 +238,7 @@ NEON_PROXY_ENABLED=$NEON_PROXY_ENABLED
 }
 
 # ## RUN
+[[ $INGRESS_ENABLED != "true" ]] || helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 [[ $VAULT_ENABLED != "true" ]] || helm repo add hashicorp https://helm.releases.hashicorp.com   ## Vault repo
 [[ $PROMETHEUS_ENABLED != "true" ]] || helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 [[ $GRAFANA_ENABLED != "true" && $LOKI_ENABLED != "true" ]] || helm repo add grafana https://grafana.github.io/helm-charts
@@ -250,7 +251,12 @@ kubectl create namespace $NAMESPACE 2>/dev/null
 # 1. Ingress-Nginx
 [[ $INGRESS_ENABLED != "true" ]] || {
   echo "Installing ingress-nginx..."
-  helm upgrade --install ingress-nginx ingress-nginx --repo https://kubernetes.github.io/ingress-nginx --namespace ingress-nginx --create-namespace
+  helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
+  --namespace ingress-nginx --create-namespace \
+  --history-max 3 \
+  --set controller.service.type=$INGRESS_SERVICE_TYPE \
+  --set controller.service.nodePorts.http=32080 \
+  --set controller.service.nodePorts.https=32443  1>/dev/null
 }
 
 ## 2. Postgres
@@ -390,6 +396,10 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | 
       --set server.persistentVolume.size=$PROMETHEUS_STORAGE_SIZE \
       --set alertmanager.persistence.storageClass=$PROMETHEUS_STORAGE_CLASS \
       --set alertmanager.persistence.size=$PROMETHEUS_STORAGE_SIZE \
+      --set server.ingress.enabled=$PROMETHEUS_INGRESS_ENABLED \
+      --set server.ingress.host=$PROXY_HOST \
+      --set server.ingress.className=$INGRESS_CLASS \
+      --set server.ingress.path=$PROMETHEUS_INGRESS_PATH \
       --set-file extraScrapeConfigs=monitoring/prometheus/extraScrapeConfigs.yaml 1>/dev/null
   }
 
@@ -410,6 +420,10 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | 
       --set persistence.storageClassName=$GRAFANA_STORAGE_CLASS \
       --set persistence.size=$GRAFANA_STORAGE_SIZE \
       --set adminUser=$GRAFANA_ADMIN_USER \
+      --set ingress.enabled=$GRAFANA_INGRESS_ENABLED \
+      --set ingress.host=$PROXY_HOST \
+      --set ingress.className=$INGRESS_CLASS \
+      --set ingress.path=$GRAFANA_INGRESS_PATH \
       --set adminPassword=$GRAFANA_ADMIN_PASSWD 1>/dev/null
   }
 }

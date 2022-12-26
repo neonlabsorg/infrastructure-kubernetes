@@ -20,6 +20,7 @@ INDEXER_KEY_FILE="id3.json"
 ## "alb" - for EKS
 ## "nginx" - for "nginx-ingress"
 INGRESS_CLASS="nginx"
+INGRESS_SERVICE_TYPE="NodePort"
 
 ################
 ## SOLANA
@@ -126,6 +127,8 @@ VAULT_HA_REPLICAS=2
 #PROMETHEUS_FS_ID=
 PROMETHEUS_STORAGE_CLASS="default"
 PROMETHEUS_STORAGE_SIZE="10Gi"
+PROMETHEUS_INGRESS_ENABLED="true"
+PROMETHEUS_INGRESS_PATH="/prometheus"
 
 ################
 ## Grafana
@@ -136,3 +139,5 @@ GRAFANA_STORAGE_CLASS="default"
 GRAFANA_STORAGE_SIZE="10Gi"
 GRAFANA_ADMIN_USER="admin"
 GRAFANA_ADMIN_PASSWD="grafana"
+GRAFANA_INGRESS_ENABLED="true"
+GRAFANA_INGRESS_PATH="/grafana"

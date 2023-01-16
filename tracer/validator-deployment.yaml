@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose-tracer.yaml
+    kompose.version: 1.27.0 (HEAD)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: validator
+  name: validator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: validator
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose-tracer.yaml
+        kompose.version: 1.27.0 (HEAD)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: validator
+    spec:
+      containers:
+        - command:
+            - /opt/solana/bin/solana-run-neon.sh
+          env:
+            - name: GEYSER_PLUGIN_CONFIG
+              value: /opt/accountsdb-plugin-config.json
+            - name: RUST_LOG
+              value: solana_runtime::system_instruction_processor=trace,solana_runtime::message_processor=error,solana_bpf_loader=debug,solana_rbpf=debug,neon_dumper_plugin::postgres_client=debug
+            - name: SOLANA_URL
+              value: http://validator:8899
+          image: neonlabsorg/neon-validator:v1.13.4-neon-tracer
+          livenessProbe:
+            exec:
+              command:
+                - ./wait-for-neon.sh
+            failureThreshold: 200
+            periodSeconds: 5
+            timeoutSeconds: 5
+          name: validator
+          ports:
+            - containerPort: 8899
+            - containerPort: 9900
+            - containerPort: 8900
+            - containerPort: 8001
+            - containerPort: 0
+              protocol: UDP
+          resources: {}
+          volumeMounts:
+            - mountPath: /opt/accountsdb-plugin-config.json
+              name: validator-claim0
+      hostname: validator
+      restartPolicy: Always
+      volumes:
+        - name: validator-claim0
+          persistentVolumeClaim:
+            claimName: validator-claim0
+status: {}

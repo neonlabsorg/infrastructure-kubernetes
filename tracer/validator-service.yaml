@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose-tracer.yaml
+    kompose.version: 1.27.0 (HEAD)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: validator
+  name: validator
+spec:
+  ports:
+    - name: "8899"
+      port: 8899
+      targetPort: 8899
+    - name: 8899-tcp
+      port: 8899
+      targetPort: 8899
+    - name: "9900"
+      port: 9900
+      targetPort: 9900
+    - name: "8900"
+      port: 8900
+      targetPort: 8900
+    - name: "8001"
+      port: 8001
+      targetPort: 8001
+    - name: "0"
+      port: 0
+      protocol: UDP
+      targetPort: 0
+  selector:
+    io.kompose.service: validator
+status:
+  loadBalancer: {}

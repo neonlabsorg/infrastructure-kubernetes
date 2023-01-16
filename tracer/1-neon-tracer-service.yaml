@@ -17,9 +17,6 @@ spec:
     - name: "9292"
       port: 9292
       targetPort: 9292
-    - name: 8250-tcp
-      port: 8250
-      targetPort: 8250
   selector:
     io.kompose.service: neon-tracer
 status:

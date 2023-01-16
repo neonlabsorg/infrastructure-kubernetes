@@ -8,6 +8,7 @@ metadata:
   labels:
     io.kompose.service: validator
   name: validator
+  namespace: neon-proxy
 spec:
   replicas: 1
   selector:
@@ -48,7 +49,6 @@ spec:
             - containerPort: 9900
             - containerPort: 8900
             - containerPort: 8001
-            - containerPort: 0
               protocol: UDP
           resources: {}
           volumeMounts:

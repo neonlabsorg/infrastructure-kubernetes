@@ -5,6 +5,7 @@ metadata:
   labels:
     io.kompose.service: validator-claim0
   name: validator-claim0
+  namespace: neon-proxy
 spec:
   accessModes:
     - ReadWriteOnce

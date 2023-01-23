@@ -376,10 +376,18 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | 
     --set-file indexer.indexerKey=$KEY_DIR/$INDEXER_KEY_FILE \
     --set ENABLE_SEND_TX_API=$PRX_ENABLE_SEND_TX_API
 
+    kubectl apply -f tracer/2-neon-rpc-deployment.yaml
+    kubect lapply -f tracer/2-neon-rpc-service.yaml
+
     kubectl -n ${NAMESPACE} wait --for=condition=ready pod neon-proxy-0 --timeout=1m || { 
       echo "ERROR: Proxy installation failed"
       exit 1 
     }
+
+    [[ $TRACE_ENABLED != "true" ]] || {
+    echo "Installing Trace-api..."
+    kubectl apply -f tracer/tracer.yaml
+  }
 }
 
 ## 4. Monitoring

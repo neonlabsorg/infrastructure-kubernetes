@@ -6,6 +6,7 @@ MONITORING_ENABLED="false"
 PROMETHEUS_ENABLED="false"
 LOKI_ENABLED="false"
 GRAFANA_ENABLED="false"
+TRACER_ENABLED="true"
 
 ## Kubernetes namespace
 NAMESPACE='neon-proxy'

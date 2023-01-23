@@ -384,7 +384,7 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | 
       exit 1 
     }
 
-    [[ $TRACE_ENABLED != "true" ]] || {
+    [[ $TRACER_ENABLED != "true" ]] || {
     echo "Installing Trace-api..."
     kubectl apply -f tracer/tracer.yaml
   }

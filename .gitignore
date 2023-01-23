@@ -18,3 +18,5 @@ tmp.txt
 config*.ini
 
 *vault-keys*.json*
+config.ini*
+config.*

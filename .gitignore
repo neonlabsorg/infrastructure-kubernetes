@@ -11,6 +11,7 @@
 
 operator-keypairs/*.json
 devnet-operators-keys
+gcp-operators-keys
 
 neon-proxy/charts/*.tgz
 tmp.txt

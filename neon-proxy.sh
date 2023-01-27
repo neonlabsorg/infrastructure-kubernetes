@@ -123,6 +123,9 @@ INDEXER_ENV=$(grep -Po 'IDX_\K.*' $VAR_FILE)
 ## Check for operator keys
 [[ $PRX_ENABLE_SEND_TX_API == "NO" ]] || [ "$(ls $KEY_DIR/$KEY_MASK 2>/dev/null)" ] || { 
     echo "ERROR: Keypairs not found in $KEY_DIR/"
+    echo "$KEY_DIR/KEY_MASK"
+    echo "Listing keys:"
+    ls $KEY_DIR/$KEY_MASK
     exit 1 
 }
 
@@ -206,7 +209,7 @@ function installVault() {
 echo -e "You can run this script with -h option\n
  ------------- Values -------------
          Namespase: $NAMESPACE
-    Keys directory: ${PWD}/${KEY_DIR} -- (found ${#OPERATOR_KEYS[@]} keys)
+    Keys directory: ${KEY_DIR} -- (found ${#OPERATOR_KEYS[@]} keys)
     Proxy replicas: $PROXY_COUNT
     Keys per proxy: $KEYS_PER_PROXY
         Solana URL: $SOLANA_URL

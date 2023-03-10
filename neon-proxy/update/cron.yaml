@@ -1,0 +1,17 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: rollout-proxy-on-new-version
+spec:
+  schedule: "*/30 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: curl-json
+            image: appropriate/curl
+          command: ["sh", "-c", "if curl http://your-json-endpoint | grep -q '\"value\":0'; then if kubectl get deploy | grep -q 'new tag'; then kubectl rollout restart deployment/my-deployment; fi; if kubectl get statefulset | grep -q 'new tag'; then kubectl rollout restart statefulset/my-statefulset; fi; fi"]
+          restartPolicy: OnFailure
+
+

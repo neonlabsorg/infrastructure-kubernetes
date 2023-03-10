@@ -35,7 +35,7 @@ SOLANA_URL=
 ################
 ## PROXY
 ################
-PROXY_VER="v0.14.5"
+PROXY_VER="v0.15.0"
 ## Proxy pods count
 PROXY_COUNT=2
 

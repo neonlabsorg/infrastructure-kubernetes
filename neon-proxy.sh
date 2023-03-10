@@ -387,6 +387,10 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | 
  
     kubectl apply -f tracer/2-neon-rpc-deployment.yaml
     kubectl apply -f tracer/2-neon-rpc-service.yaml
+
+    ###CREATING CRON TO CHECK VERSION AND UPGRADE/ROLLOUT
+    kubectl apply -f cron/cron.yaml
+
     }
 
     [[ $TRACER_ENABLED != "true" ]] || {
@@ -409,7 +413,6 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | 
       --set server.persistentVolume.size=$PROMETHEUS_STORAGE_SIZE \
       --set alertmanager.persistence.storageClass=$PROMETHEUS_STORAGE_CLASS \
       --set alertmanager.persistence.size=$PROMETHEUS_STORAGE_SIZE \
-      --set server.ingress.enabled=$PROMETHEUS_INGRESS_ENABLED \
       --set server.ingress.host=$PROXY_HOST \
       --set server.ingress.className=$INGRESS_CLASS \
       --set server.ingress.path=$PROMETHEUS_INGRESS_PATH \

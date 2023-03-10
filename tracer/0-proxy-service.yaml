@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    meta.helm.sh/release-name: neon-proxy
+    meta.helm.sh/release-namespace: neon-proxy
+  labels:
+    app.kubernetes.io/instance: neon-proxy
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: neon-proxy
+    app.kubernetes.io/version: 1.16.0
+    helm.sh/chart: neon-proxy-0.1.0
+  name: proxy
+  namespace: neon-proxy
+spec:
+  clusterIP: None
+  clusterIPs:
+  - None
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: proxy
+    port: 9090
+    protocol: TCP
+    targetPort: 9090
+  - name: service-port
+    port: 9092
+    protocol: TCP
+    targetPort: service-port
+  - name: exporter
+    port: 8888
+    protocol: TCP
+    targetPort: exporter
+  selector:
+    application-pod: neon-proxy
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
+  type: ClusterIP

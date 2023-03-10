@@ -47,14 +47,17 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-        {{- if .Values.envFrom }}        
+          env:
+          - name: INDEXER_KEY
+            value: {{ .Values.indexer.indexerKey | toString | quote }}
+        {{- if .Values.envFrom }}
           envFrom:
           {{- toYaml .Values.envFrom | nindent 10 }}
         {{- end }}
         {{- if .Values.volumeMounts }}
           volumeMounts:
           {{- toYaml .Values.volumeMounts | nindent 10 }}
-        {{- end }}        
+        {{- end }}                
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           command: ["/bin/bash"]

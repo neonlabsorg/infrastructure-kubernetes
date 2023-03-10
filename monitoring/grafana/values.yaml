@@ -38,15 +38,25 @@ dashboards:
       gnetId: 13639
       datasource: Loki
     prometheus-k8s:
-      name: StateMetrics2
       gnetId: 1860
       datasource: Prometheus
     prometheus-k8s2:
-      name: StateMetrics
       gnetId: 12117
       datasource: Prometheus
-    # prometheus-k8s2:
-    #   name: StateMetrics
-    #   gnetId: 15661
-    #   datasource: Prometheus
-      
+    neon-proxy-1:
+      gnetId: 17591
+      datasource: Prometheus
+    neon-proxy-indexer:
+      gnetId: 17592
+      datasource: Prometheus
+
+ingress:
+  enabled: false
+  annotations: {}
+  labels: {}
+  path: /grafana
+  pathType: Prefix
+  hosts:
+    - chart-example.local
+  extraPaths: []
+  tls: []

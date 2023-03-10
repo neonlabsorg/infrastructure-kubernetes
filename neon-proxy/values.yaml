@@ -1,9 +1,6 @@
 proxyCount: 1
 keysPerProxy: 2
 
-clusterType: "localhost"
-environment: devnet
-
 onePod:
   enabled: false
 
@@ -94,8 +91,7 @@ indexer:
     type: ClusterIP
     port: 8888
     protocol: TCP
-  LOG_FULL_OBJECT_INFO: ""
-  GATHER_STATISTICS: ""
+  indexerKey: ""
   labels: {}
   nodeSelector: {}
   tolerations: []

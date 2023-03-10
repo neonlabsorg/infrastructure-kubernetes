@@ -1,0 +1,283 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    meta.helm.sh/release-name: neon-proxy
+    meta.helm.sh/release-namespace: neon-proxy
+  labels:
+    app.kubernetes.io/instance: neon-proxy
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: neon-proxy
+    app.kubernetes.io/version: 1.16.0
+    helm.sh/chart: neon-proxy-0.1.0
+  name: proxy
+  namespace: neon-proxy
+spec:
+  clusterIP: None
+  clusterIPs:
+  - None
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: proxy
+    port: 9090
+    protocol: TCP
+    targetPort: 9090
+  - name: service-port
+    port: 9092
+    protocol: TCP
+    targetPort: service-port
+  - name: exporter
+    port: 8888
+    protocol: TCP
+    targetPort: exporter
+  selector:
+    application-pod: neon-proxy
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
+  type: ClusterIP
+
+--- 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose-tracer.yaml
+    kompose.version: 1.27.0 (HEAD)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: tracer-db
+  name: tracer-db
+  namespace: neon-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: tracer-db
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose-tracer.yaml
+        kompose.version: 1.27.0 (HEAD)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: tracer-db
+    spec:
+      containers:
+        - args:
+            - postgres
+            - -c
+            - max_connections=1000
+          env:
+            - name: POSTGRES_DB
+              value: solana
+            - name: POSTGRES_PASSWORD
+              value: solana-pass
+            - name: POSTGRES_USER
+              value: solana-user
+          image: neonlabsorg/neon-accountsdb:v1.13.4-neon-tracer
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready -h tracer_db -p 5432 -U solana-user
+            failureThreshold: 10
+            periodSeconds: 5
+            timeoutSeconds: 10
+          name: tracer-db
+          ports:
+            - containerPort: 5432
+          resources: {}
+      hostname: tracer-db
+      restartPolicy: Always
+status: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose-tracer.yaml
+    kompose.version: 1.27.0 (HEAD)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: tracer-db
+  name: tracer-db
+  namespace: neon-proxy
+spec:
+  ports:
+    - name: "5432"
+      port: 5432
+      targetPort: 5432
+  selector:
+    io.kompose.service: tracer-db
+status:
+  loadBalancer: {}
+
+--- 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose-tracer.yaml
+    kompose.version: 1.27.0 (HEAD)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: neon-tracer
+  name: neon-tracer
+  namespace: neon-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: neon-tracer
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose-tracer.yaml
+        kompose.version: 1.27.0 (HEAD)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: neon-tracer
+    spec:
+      containers:
+        - env:
+            - name: EVM_LOADER
+              value: 53DfF883gyixYNXnM7s5xhdeyV8mVk9T4i2hGV9vG9io
+            - name: INDEXER_DB_HOST
+              value: postgres
+            - name: INDEXER_DB_NAME
+              value: neon-db
+            - name: INDEXER_DB_PASSWORD
+              value: neon-proxy-pass
+            - name: INDEXER_DB_PORT
+              value: "543222222222"
+            - name: INDEXER_DB_USER
+              value: neon-proxy
+            - name: LISTEN_ADDR
+              value: 0.0.0.0:8250
+            - name: METRICS_IP
+              value: 0.0.0.0
+            - name: METRICS_PORT
+              value: "9292"
+            - name: MONITORING_INTERVAL_SEC
+              value: "15"
+            - name: NEON_CHAIN_ID
+              value: "111"
+            - name: NEON_TOKEN_MINT
+              value: HPsV9Deocecw3GeZv1FkAPNCBRfuVyfw9MMwjwRe1xaU
+            - name: RUST_BACKTRACE
+              value: "1"
+            - name: RUST_LOG
+              value: neon=debug,metrics=debug
+            - name: SOLANA_URL
+              value: http://validator:8899
+            - name: TRACER_DB_HOST
+              value: tracer-db
+            - name: TRACER_DB_NAME
+              value: solana
+            - name: TRACER_DB_PASSWORD
+              value: solana-pass
+            - name: TRACER_DB_PORT
+              value: "5432"
+            - name: TRACER_DB_USER
+              value: solana-user
+            - name: WEB3_PROXY
+              value: http://proxy:9090/solana
+          image: neonlabsorg/neon-tracer:ci-eip-1898
+          name: neon-tracer
+          ports:
+            - containerPort: 8250
+            - containerPort: 9292
+          resources: {}
+      hostname: neon-tracer
+      restartPolicy: Always
+status: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose-tracer.yaml
+    kompose.version: 1.27.0 (HEAD)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: neon-tracer
+  name: neon-tracer
+  namespace: neon-proxy
+spec:
+  ports:
+    - name: "8250"
+      port: 8250
+      targetPort: 8250
+    - name: "9292"
+      port: 9292
+      targetPort: 9292
+  selector:
+    io.kompose.service: neon-tracer
+status:
+  loadBalancer: {}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose-tracer.yaml
+    kompose.version: 1.27.0 (HEAD)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: neon-rpc
+  name: neon-rpc
+  namespace: neon-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: neon-rpc
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose-tracer.yaml
+        kompose.version: 1.27.0 (HEAD)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: neon-rpc
+    spec:
+      containers:
+        - image: neonlabsorg/neon-rpc:ci-eip-1898
+          name: neon-rpc
+          ports:
+            - containerPort: 9090
+          resources: {}
+      hostname: neon-rpc
+      restartPolicy: Always
+status: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose-tracer.yaml
+    kompose.version: 1.27.0 (HEAD)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: neon-rpc
+  name: neon-rpc
+  namespace: neon-proxy
+spec:
+  ports:
+    - name: "9090"
+      port: 9090
+      targetPort: 9090
+  selector:
+    io.kompose.service: neon-rpc
+status:
+  loadBalancer: {}

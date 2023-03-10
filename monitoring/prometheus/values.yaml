@@ -1,1 +1,11 @@
 #https://github.com/prometheus-community/helm-charts/blob/main/charts/prometheus/values.yaml
+
+server:
+  ingress:
+      enabled: false
+      annotations: {}
+      hosts: []
+      path: /grafana
+      pathType: Prefix
+      extraPaths: []
+      tls: []

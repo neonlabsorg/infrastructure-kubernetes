@@ -24,7 +24,8 @@ data:
   run-indexer.sh: |
     #!/bin/bash
     source /vault/secrets/proxy-env
-    source /vault/secrets/indexer-env     
+    source /vault/secrets/indexer-env
+    echo $INDEXER_KEY > /root/.config/solana/id.json
     COMPONENT=Indexer
     echo "$(date "+%F %X.%3N") I $(basename "$0"):${LINENO} $$ ${COMPONENT}:StartScript {} Start ${COMPONENT} service"
     if [ -z "$EVM_LOADER" ]; then

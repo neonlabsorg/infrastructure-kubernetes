@@ -93,29 +93,30 @@
 	 Just use ( -r ) parameter on install process.
 
    ***SOLANA*** section:
-
-    There is an option to use in the install script -S option to set this variable
+   
+   There is an option to use in the install script -S option to set this variable
     
     `SOLANA_URL=`
 
-        Specifies a Solana URL RPC endpoint that a proxy is connecting to.
+Specifies a Solana URL RPC endpoint that a proxy is connecting to.
         
-    The public solana endpoints have limits for requests per minute (60).
-    The best scenario is to use an own solana node inside your infrastructure.
+The public solana endpoints have limits for requests per minute (60).
 
-    Here you need to set your ***neon_evm*** host or;
+The best scenario is to use an own solana node inside your infrastructure.
 
-    | CONFIG | SOLANA_URL | NEON_CLIT_TIMEOUT | CANCEL_TIMEOUT | 
-    | --- | --- | --- | --- |
-    | devnet | https://api.devnet.solana.com/ | 10 | 60 (slot) | 
-    | testnet | https://api.testnet.solana.com/ | 15 | 60 (slot) | 
-    | local | http://localhost:8899 | 1 | 10 (slot) | 
+Here you need to set your ***neon_evm*** host or;
+
+   | CONFIG | SOLANA_URL | NEON_CLIT_TIMEOUT | CANCEL_TIMEOUT | 
+   | --- | --- | --- | --- |
+   | devnet | https://api.devnet.solana.com/ | 10 | 60 (slot) | 
+   | testnet | https://api.testnet.solana.com/ | 15 | 60 (slot) | 
+   | local | http://localhost:8899 | 1 | 10 (slot) | 
 
    ***PP_SOLANA_URL***
     For standalone solana we need to use different values (SOLANA_URL and PP_SOLANA_URL) for these env vars.
     For testnet/devnet/mainnet-beta we can use same values for this env vars (SOLANA_URL and PP_SOLANA_URL)
 
-      `Solana RPC url. If disabled will be the       same as $SOLANA_URL`
+   If disabled will be the same as `$SOLANA_URL`
       
 `      PP_SOLANA_URL=`
 

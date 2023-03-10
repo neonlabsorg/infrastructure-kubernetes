@@ -11,7 +11,7 @@ spec:
           containers:
           - name: curl-json
             image: appropriate/curl
-          command: ["sh", "-c", "if curl http://your-json-endpoint | grep -q '\"value\":0'; then if kubectl get deploy | grep -q 'new tag'; then kubectl rollout restart deployment/my-deployment; fi; if kubectl get statefulset | grep -q 'new tag'; then kubectl rollout restart statefulset/my-statefulset; fi; fi"]
+            command: ["sh", "-c", "if curl http://your-json-endpoint | grep -q '\"value\":0'; then if kubectl get deploy | grep -q 'new tag'; then kubectl rollout restart deployment/my-deployment; fi; if kubectl get statefulset | grep -q 'new tag'; then kubectl rollout restart statefulset/my-statefulset; fi; fi"]
           restartPolicy: OnFailure
 
 

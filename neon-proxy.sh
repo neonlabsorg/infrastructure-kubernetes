@@ -383,14 +383,6 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | 
     kubectl -n ${NAMESPACE} wait --for=condition=ready pod neon-proxy-0 --timeout=1m || { 
       echo "ERROR: Proxy installation failed"
       exit 1
-
- 
-    kubectl apply -f tracer/2-neon-rpc-deployment.yaml
-    kubectl apply -f tracer/2-neon-rpc-service.yaml
-
-    ###CREATING CRON TO CHECK VERSION AND UPGRADE/ROLLOUT
-    kubectl apply -f neon-proxy/update/cron.yaml
-
     }
 
     [[ $TRACER_ENABLED != "true" ]] || {
@@ -446,3 +438,9 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | 
 
   
 [ $VAULT_TYPE == "dev" ] || [ ! $FIRST_RUN ] || echo -e "\n###################\nWARNING: Please copy and keep $VAULT_KEYS_FILE in safe place!\n###################\n"
+
+    kubectl apply -f tracer/2-neon-rpc-deployment.yaml
+    kubectl apply -f tracer/2-neon-rpc-service.yaml
+
+    ###CREATING CRON TO CHECK VERSION AND UPGRADE/ROLLOUT
+    kubectl apply -f neon-proxy/update/cron.yaml

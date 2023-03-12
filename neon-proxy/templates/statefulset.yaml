@@ -72,7 +72,7 @@ spec:
         {{- if .Values.envFrom }}        
           envFrom:
           {{- toYaml .Values.envFrom | nindent 10 }}
-        {{- end }}        
+        {{- end }}  
           ports:
           - name: {{ .Values.service.name }}
             containerPort: {{ .Values.service.port }}
@@ -102,6 +102,22 @@ spec:
             postStart:
               exec:
                 command: ["/bin/sh", "-c", "/root/.config/solana/scripts/get_keys.sh"]
+            preStop:
+              exec:
+                command:
+                - /bin/sh
+                - -c
+                - >
+                    if curl -s localhost:8888/metrics | grep -q '^tx_in_mempool 0'; then
+                      echo "tx_in_mempool is ZERO";
+                      exit 0;
+                    elif curl -s localhost:8888/metrics | grep -Eq '^tx_in_mempool ([1-9][0-9]*|[1-9])$'; then
+                      echo "tx_in_mempool is HIGHER THAN ZERO";
+                      exit 1;
+                    else
+                      echo "tx_in_mempool NOT FOUND";
+                      exit 0;
+                    fi;  
         {{- end }}
       volumes:
         {{- toYaml .Values.volumes | nindent 8 }}

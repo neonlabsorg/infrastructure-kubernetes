@@ -8,7 +8,7 @@
 .idea/
 *.tmproj
 .vscode/
-
+operator-keys-local
 operator-keypairs/*.json
 devnet-operators-keys
 gcp-operators-keys

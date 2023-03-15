@@ -442,6 +442,7 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | 
     kubectl apply -f tracer/0-proxy-service.yaml
     kubectl apply -f tracer/0-tracer-db-deployment.yaml
     kubectl apply -f tracer/0-tracer-db-service.yaml
+    kubectl apply -f tracer/1-neon-tracer-service.yaml
     kubectl apply -f tracer/2-neon-rpc-deployment.yaml
     kubectl apply -f tracer/2-neon-rpc-service.yaml
 

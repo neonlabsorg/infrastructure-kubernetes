@@ -16,6 +16,8 @@ metadata:
 spec:
   serviceName: {{ .Release.Name }}
   replicas: {{ .Values.proxyCount }}
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       {{- include "neon-proxy.selectorLabels" . | nindent 6 }}

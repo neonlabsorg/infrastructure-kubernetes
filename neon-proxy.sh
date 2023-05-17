@@ -447,4 +447,4 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | 
     kubectl apply -f tracer/2-neon-rpc-service.yaml
 
     ###CREATING CRON TO CHECK VERSION AND UPGRADE/ROLLOUT
-    kubectl apply -f neon-proxy/update/cron.yaml
+    #kubectl apply -f neon-proxy/update/cron.yaml

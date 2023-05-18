@@ -1,0 +1,104 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gas-tank
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "neon-proxy.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "neon-proxy.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        kubernetes.io/psp: restricted
+        checksum/secret: {{ include (print $.Template.BasePath "/proxy-config.yaml") . | sha256sum }}  
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/agent-inject-status: "update"
+        vault.hashicorp.com/role: "neon-proxy"
+        vault.hashicorp.com/agent-inject-secret-proxy-env: "neon-proxy/data/proxy_env"
+        vault.hashicorp.com/agent-inject-template-proxy-env: |
+          {{`{{- with secret "neon-proxy/data/proxy_env" -}}
+            {{ range $k, $v := .Data.data }}
+            export  {{ $k }}={{ $v }}
+            {{ end }}
+          {{- end }}`}}  
+        vault.hashicorp.com/agent-inject-secret-indexer-env: "neon-proxy/data/indexer_env"
+        vault.hashicorp.com/agent-inject-template-indexer-env: |
+          {{`{{- with secret "neon-proxy/data/indexer_env" -}}
+            {{ range $k, $v := .Data.data }}
+            export  {{ $k }}={{ $v }}
+            {{ end }}
+          {{- end }}`}}       
+      labels:
+        application-pod: neon-proxy-indexer
+        {{- include "neon-proxy.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+          - name: INDEXER_ERC20_WRAPPER_WHITELIST
+            value: {{ .Values.gas_indexer_erc20_wrapper_whitelist | toString | quote }}
+        {{- if .Values.envFrom }}    
+          - name: START_SLOT
+            value: {{ .Values.gas_start_slot | toString | quote }}
+        {{- if .Values.envFrom }}
+          envFrom:
+          {{- toYaml .Values.envFrom | nindent 10 }}
+        {{- end }}
+        {{- if .Values.volumeMounts }}
+          volumeMounts:
+          {{- toYaml .Values.volumeMounts | nindent 10 }}
+        {{- end }}                
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          command: ["/bin/bash"]
+          args: ["./run-gas-tank.sh"]
+      volumes:
+        {{- toYaml .Values.volumes | nindent 8 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+        {{- if .Values.envFrom }}
+          envFrom:
+          {{- toYaml .Values.envFrom | nindent 10 }}
+        {{- end }}
+        {{- if .Values.volumeMounts }}
+          volumeMounts:
+          {{- toYaml .Values.volumeMounts | nindent 10 }}
+        {{- end }}                
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          command: ["/bin/bash"]
+          args: ["./run-gas-tank.sh"]
+      volumes:
+        {{- toYaml .Values.volumes | nindent 8 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- end }}
+      {{- end }}

@@ -1,17 +1,26 @@
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  name: rollout-proxy-on-new-version
+  name: rollout-statefulset
 spec:
-  schedule: "*/30 * * * *"
+  schedule: "0 */4 * * *"
   jobTemplate:
     spec:
       template:
         spec:
           containers:
-          - name: curl-json
-            image: appropriate/curl
-            command: ["sh", "-c", "if curl http://your-json-endpoint | grep -q '\"value\":0'; then if kubectl get deploy | grep -q 'new tag'; then kubectl rollout restart deployment/my-deployment; fi; if kubectl get statefulset | grep -q 'new tag'; then kubectl rollout restart statefulset/my-statefulset; fi; fi"]
+          - name: rollout-statefulset
+            image: kubectl
+            command: ["/bin/sh", "-c"]
+            args:
+            - |
+              set -e
+              set -x
+              old_hash=$(kubectl get statefulset neon-proxy -o jsonpath='{.metadata.annotations.hashed-image}')
+              new_hash=$(kubectl inspect image neonlabsorg/proxy:v0.15.4 | md5sum | cut -f1 -d' ')
+              if [ "$old_hash" != "$new_hash" ]; then
+                kubectl set image statefulset neon-proxy neon-proxy=neonlabsorg/proxy:v0.15.4
+              else
+                echo "No update available"
+              fi
           restartPolicy: OnFailure
-
-

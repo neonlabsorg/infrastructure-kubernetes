@@ -79,11 +79,13 @@ volumeMounts:
     mountPath: /root/.config/solana/scripts/get_keys.sh
     subPath: get_keys.sh
   - name: proxy-keys-script
-    mountPath: /opt/proxy/run-proxy.sh
+    mountPath: proxy/run-proxy.sh
     subPath: run-proxy.sh
   - name: proxy-keys-script
-    mountPath: /opt/proxy/run-indexer.sh
+    mountPath: proxy/run-indexer.sh
     subPath: run-indexer.sh
+
+workingDir: "/opt"
 
 indexer:
   service:

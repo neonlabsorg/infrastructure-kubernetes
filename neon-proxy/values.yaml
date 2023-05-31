@@ -82,7 +82,7 @@ volumeMounts:
     mountPath: proxy/run-proxy.sh
     subPath: run-proxy.sh
   - name: proxy-keys-script
-    mountPath: proxy/run-indexer.sh
+    mountPath: /opt/proxy/run-indexer.sh
     subPath: run-indexer.sh
 
 workingDir: "/opt"

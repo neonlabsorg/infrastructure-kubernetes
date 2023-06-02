@@ -105,6 +105,7 @@ If you need monitoring part
 
  Set MINIMAL_GAS_PRICE to 0 + Remove/delete PYTH configuration, if you want 0 gas-price:
       In config.ini, set:
+      
       PRX_MINIMAL_GAS_PRICE="0"
       # ...and
       # delete lines that contains:

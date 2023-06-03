@@ -25,7 +25,6 @@ HELP="\nUsage: $0 [OPTION]...\n
   -i, Init setup \n
   -r, Read-only mode\n  
   -S, SOLANA_URL\n
-  -s, PP_SOLANA_URL\n
   -p, Set postgres admin password (can be used only with -i option) \n
   -v, Set vault root token (experemental) \n  
   -m, Use this option to set migrations\n
@@ -42,7 +41,6 @@ while getopts ":f:k:n:p:v:S:s:yhmird" opt; do
     p) CLI_POSTGRES_PASSWORD=${OPTARG} ;;
     v) CLI_VAULT_ROOT_TOKEN=${OPTARG} ;;    
     S) CLI_SOLANA_URL=${OPTARG} ;;
-    s) CLI_PP_SOLANA_URL=${OPTARG} ;;
     y) FORCE_APPLY=1 ;;
     m) DB_MIGRATION="true" ;;  
     i) FIRST_RUN="true";DB_MIGRATION="true" ;;
@@ -83,7 +81,6 @@ INDEXER_ENV=$(grep -Po 'IDX_\K.*' $VAR_FILE)
 [ ! $CLI_POSTGRES_PASSWORD ] || POSTGRES_ADMIN_PASSWD=$CLI_POSTGRES_PASSWORD
 [ ! $CLI_VAULT_ROOT_TOKEN ] || VAULT_ROOT_TOKEN=$CLI_VAULT_ROOT_TOKEN
 [ ! $CLI_SOLANA_URL ] || SOLANA_URL=$CLI_SOLANA_URL
-[ ! $CLI_PP_SOLANA_URL ] || PP_SOLANA_URL=$CLI_SOLANA_URL
 [ ! $CLI_KEY_DIR ] || KEY_DIR=$CLI_KEY_DIR
 [ ! $CLI_READONLY ] || PRX_ENABLE_SEND_TX_API="NO"
 [ $VAULT_NAMESPACE ] || VAULT_NAMESPACE=$NAMESPACE
@@ -358,16 +355,36 @@ echo "Setup indexer env variables"
 kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | xargs vault kv put neon-proxy/indexer_env" 1>/dev/null
 
 ## 3. Proxy
+#[[ $NEON_PROXY_ENABLED != "true" ]] || {
+#  echo "Installing neon-proxy..."
+#  helm upgrade --install --atomic neon-proxy neon-proxy/ \
+#    --namespace=$NAMESPACE \
+#    --force \
+#    --history-max 3 \
+#    --set ingress.host=$PROXY_HOST \
+#    --set ingress.className=$INGRESS_CLASS \
+#    --set solanaUrl=$SOLANA_URL \
+#    --set proxyCount=$PROXY_COUNT \
+#    --set keysPerProxy=$KEYS_PER_PROXY \
+#    --set image.tag=$PROXY_VER \
+#    --set resources.requests.cpu=$PROXY_MIN_CPU \
+#    --set resources.requests.memory=$PROXY_MIN_MEM \
+#    --set resources.limits.cpu=$PROXY_MAX_CPU \
+#    --set resources.limits.memory=$PROXY_MAX_MEM \
+#    --set onePod.enabled=$ONE_PROXY_PER_NODE \
+#    --set-file indexer.indexerKey=$KEY_DIR/$INDEXER_KEY_FILE \
+#    --set ENABLE_SEND_TX_API=$PRX_ENABLE_SEND_TX_API \
+#    --set gas_indexer_erc20_wrapper_whitelist=ANY \
+#    --set gas_start_slot=LATEST \
+
+## 3. Proxy
 [[ $NEON_PROXY_ENABLED != "true" ]] || {
   echo "Installing neon-proxy..."
   helm upgrade --install --atomic neon-proxy neon-proxy/ \
     --namespace=$NAMESPACE \
     --force \
     --history-max 3 \
-    --set ingress.host=$PROXY_HOST \
-    --set ingress.className=$INGRESS_CLASS \
     --set solanaUrl=$SOLANA_URL \
-    --set ppsolanaUrl=$PP_SOLANA_URL \
     --set proxyCount=$PROXY_COUNT \
     --set keysPerProxy=$KEYS_PER_PROXY \
     --set image.tag=$PROXY_VER \
@@ -379,7 +396,7 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | 
     --set-file indexer.indexerKey=$KEY_DIR/$INDEXER_KEY_FILE \
     --set ENABLE_SEND_TX_API=$PRX_ENABLE_SEND_TX_API \
     --set gas_indexer_erc20_wrapper_whitelist=ANY \
-    --set gas_start_slot=LATEST
+    --set gas_start_slot=195350522
 
 
 

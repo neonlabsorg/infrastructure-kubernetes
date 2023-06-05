@@ -3,7 +3,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   namespace: {{ .Release.Namespace }}
-  name: {{ .Release.Namespace }}-ing3
+  name: {{ .Release.Namespace }}-ing
   annotations:
     app.kubernetes.io/name: {{ .Values.ingress.className }} 
     #kubernetes.io/ingress.class: {{ .Values.ingress.className }}

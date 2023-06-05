@@ -66,6 +66,8 @@ ENABLE_SEND_TX_API: "YES"
 proxyEnv: {}
 
 solanaUrl: ""
+evm_loader: ""
+minimal_gas_price: ""
 ppsolanaUrl: ""
 
 volumes: 

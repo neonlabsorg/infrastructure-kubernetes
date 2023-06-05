@@ -100,4 +100,15 @@ If you need monitoring part
     PROMETHEUS_STORAGE_CLASS="nfs-client"
     GRAFANA_STORAGE_CLASS="nfs-client"
     LOKI_STORAGE_CLASS="nfs-client"
+    
+## Gasless setup
+
+ Set MINIMAL_GAS_PRICE to 0 + Remove/delete PYTH configuration, if you want 0 gas-price:
+      In config.ini, set:
+      
+      PRX_MINIMAL_GAS_PRICE="0"
+      # ...and
+      # delete lines that contains:
+      PYTH_MAPPING_ACCOUNT
+      PP_SOLANA_URL      
 

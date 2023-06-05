@@ -68,6 +68,7 @@ proxyEnv: {}
 solanaUrl: ""
 evm_loader: ""
 minimal_gas_price: ""
+commit_level: ""
 ppsolanaUrl: ""
 
 volumes: 

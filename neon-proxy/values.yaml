@@ -69,6 +69,7 @@ solanaUrl: ""
 evm_loader: ""
 minimal_gas_price: ""
 commit_level: ""
+perm_account_limit: ""
 ppsolanaUrl: ""
 
 volumes: 

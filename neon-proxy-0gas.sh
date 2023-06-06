@@ -367,6 +367,7 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | 
     --set solanaUrl=$SOLANA_URL \
     --set evm_loader=$EVM_LOADER \
     --set commit_level=$COMMIT_LEVEL \
+    --set perm_account_limit=$PERM_ACCOUNT_LIMIT \
     --set proxyCount=$PROXY_COUNT \
     --set keysPerProxy=$KEYS_PER_PROXY \
     --set image.tag=$PROXY_VER \

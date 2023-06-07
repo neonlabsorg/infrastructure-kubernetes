@@ -66,6 +66,11 @@ ENABLE_SEND_TX_API: "YES"
 proxyEnv: {}
 
 solanaUrl: ""
+evm_loader: ""
+minimal_gas_price: ""
+commit_level: ""
+perm_account_limit: ""
+ppsolanaUrl: ""
 
 volumes: 
   - name: proxy-keys-script

@@ -23,7 +23,7 @@ Copy and set variables in config file
 
 ### Operator keys
 
-Copy your public keys on operator-keypairs path.
+Copy your private keys on operator-keypairs path.
 
 
 ### Run setup

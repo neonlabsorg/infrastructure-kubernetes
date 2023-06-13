@@ -386,8 +386,6 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | 
     --history-max 3 \
     --set solanaUrl=$SOLANA_URL \
     --set evm_loader=$EVM_LOADER \
-    --set commit_level=$COMMIT_LEVEL \
-    --set perm_account_limit=$PERM_ACCOUNT_LIMIT \
     --set proxyCount=$PROXY_COUNT \
     --set keysPerProxy=$KEYS_PER_PROXY \
     --set image.tag=$PROXY_VER \
@@ -398,9 +396,12 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | 
     --set onePod.enabled=$ONE_PROXY_PER_NODE \
     --set-file indexer.indexerKey=$KEY_DIR/$INDEXER_KEY_FILE \
     --set ENABLE_SEND_TX_API=$PRX_ENABLE_SEND_TX_API \
-    --set minimal_gas_price=$MINIMAL_GAS_PRICE \
     --set gas_indexer_erc20_wrapper_whitelist=ANY \
-    --set gas_start_slot=CONTINUE
+    --set gas_start_slot=CONTINUE \
+    --wait --timeout=1h \
+#    --set minimal_gas_price=$MINIMAL_GAS_PRICE  \
+#    --set commit_level=$COMMIT_LEVEL \
+
 
 
 

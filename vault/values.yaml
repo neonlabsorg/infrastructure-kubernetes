@@ -13,10 +13,10 @@ server:
   resources:
     requests:
       memory: 256Mi
-      cpu: 250m
+      cpu: 500m
     limits:
       memory: 256Mi
-      cpu: 250m
+      cpu: 500m
 
 
   extraSecretEnvironmentVars:

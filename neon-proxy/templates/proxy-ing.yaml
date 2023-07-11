@@ -5,18 +5,24 @@ metadata:
   namespace: {{ .Release.Namespace }}
   name: {{ .Release.Namespace }}-ing3
   annotations:
-    app.kubernetes.io/name: {{ .Values.ingress.className }} 
+    app.kubernetes.io/name: {{ .Values.ingress.className }}
     #kubernetes.io/ingress.class: {{ .Values.ingress.className }}
     alb.ingress.kubernetes.io/scheme: internet-facing
-    alb.ingress.kubernetes.io/target-type: ip    
+    alb.ingress.kubernetes.io/target-type: ip
     nginx.ingress.kubernetes.io/rewrite-target: /solana
     nginx.ingress.kubernetes.io/affinity-mode: "persistent"
-    nginx.ingress.kubernetes.io/affinity-canary-behavior: "sticky" 
-    use-proxy-protocol: "true"  
+    nginx.ingress.kubernetes.io/affinity-canary-behavior: "sticky"
+    use-proxy-protocol: "true"
 spec:
   ingressClassName: {{ .Values.ingress.className }}
+  {{- if .Values.ingress.sslCertificate }}
+  tls:
+    - hosts:
+        - {{ .Values.ingress.sslDomain }}
+      secretName: {{ .Values.ingress.sslSecretName }}
+  {{- end }}
   rules:
-    - host: {{ .Values.ingress.host }} 
+    - host: {{ .Values.ingress.host }}
       http:
         paths:
           - path: /
@@ -24,6 +30,6 @@ spec:
             backend:
               service:
                 name: {{ .Values.service.name }}
-                port: 
+                port:
                   number: {{ .Values.service.port }}
-{{- end }}                  
+{{- end }}

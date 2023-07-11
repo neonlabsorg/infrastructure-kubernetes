@@ -8,6 +8,9 @@ ingress:
   enabled: true
   className: "nginx"
   host: ""
+  sslCertificate: false
+  sslDomain: ""
+  sslSecretName: ""
 
 image:
   repository: neonlabsorg/proxy
@@ -17,9 +20,9 @@ image:
 resources:
   requests:
     cpu: 500m
-    memory: 2G        
+    memory: 2G
   limits:
-    cpu: 1000m            
+    cpu: 1000m
     memory: 4G
 
 serviceAccount:
@@ -56,9 +59,9 @@ extraPorts:
     name: exporter
 
 envFrom:
-  - secretRef: 
+  - secretRef:
       name: postgres-secret
-  - secretRef: 
+  - secretRef:
       name: proxy-config
 
 ENABLE_SEND_TX_API: "YES"
@@ -72,13 +75,13 @@ commit_level: ""
 perm_account_limit: ""
 ppsolanaUrl: ""
 
-volumes: 
+volumes:
   - name: proxy-keys-script
     configMap:
       name: proxy-keys-script
       defaultMode: 0777
 
-volumeMounts: 
+volumeMounts:
   - name: proxy-keys-script
     mountPath: /root/.config/solana/scripts/get_keys.sh
     subPath: get_keys.sh
@@ -103,7 +106,7 @@ indexer:
   tolerations: []
   affinity: {}
   podAnnotations: {}
- 
+
 
 
 

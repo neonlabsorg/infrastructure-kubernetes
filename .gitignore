@@ -21,3 +21,5 @@ operator-keypairs-devnet
 *vault-keys*.json*
 config.ini*
 config.*
+
+.secrets

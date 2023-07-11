@@ -16,12 +16,22 @@ KEY_DIR='operator-keypairs'
 KEY_MASK="id*.json"
 INDEXER_KEY_FILE="id3.json"
 
-## Example 
+## Example
 ## "gce" - for GKE
 ## "alb" - for EKS
 ## "nginx" - for "nginx-ingress"
 INGRESS_CLASS="nginx"
 INGRESS_SERVICE_TYPE="NodePort"
+
+## Static IP for ingress
+INGRESS_LB_STATIC_IP=
+
+## SSL for ingress
+INGRESS_SSL_CERTIFICATE="false"
+INGRESS_SSL_DOMAIN=
+INGRESS_SSL_SECRET_NAME=
+INGRESS_SSL_CERT_PATH=
+INGRESS_SSL_CERT_KEY_PATH=
 
 ################
 ## SOLANA
@@ -55,7 +65,7 @@ PROXY_MAX_MEM="4Gi"
 
 ONE_PROXY_PER_NODE="false"
 
-## PROXY ENV   
+## PROXY ENV
 PRX_FAUCET_URL=""
 PRX_PROXY_URL=""
 PRX_LOG_NEON_CLI_DEBUG="YES"
@@ -123,7 +133,7 @@ VAULT_DEV_TOKEN="root"
 #VAULT_UNSEAL_KEY=""
 VAULT_KEYS_FILE="vault-keys.json"
 
-## -key-shares (int: 5) - Number of key shares to split the generated master key into. This is the number of "unseal keys" to generate. 
+## -key-shares (int: 5) - Number of key shares to split the generated master key into. This is the number of "unseal keys" to generate.
 VAULT_KEY_SHARED=1
 
 ## -key-threshold (int: 3) - Number of key shares required to reconstruct the root key. This must be less than or equal to -key-shares

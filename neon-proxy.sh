@@ -285,6 +285,7 @@ helm upgrade --install --atomic postgres postgres/ \
   --set postgres.password=$POSTGRES_PASSWORD \
   --set service.port=$POSTGRES_PORT \
   --set postgres.ssl=$POSTGRES_SSL \
+  --set postgres.maxConnections=1000 \
   --set persistence.storageClass=$POSTGRES_STORAGE_CLASS \
   --set persistence.size=$POSTGRES_STORAGE_SIZE \
   --set migrate.enabled=$DB_MIGRATION 1>/dev/null

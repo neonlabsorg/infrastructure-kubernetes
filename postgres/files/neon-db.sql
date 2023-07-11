@@ -232,3 +232,4 @@
         json_data_list TEXT
     );
     CREATE UNIQUE INDEX IF NOT EXISTS idx_solana_alt_infos_block ON solana_alt_infos(block_slot);
+    ALTER system SET max_connections=1500;

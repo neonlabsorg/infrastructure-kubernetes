@@ -15,3 +15,4 @@ CREATE TABLE IF NOT EXISTS vault_ha_locks (
   valid_until                                 TIMESTAMP WITH TIME ZONE NOT NULL,
   CONSTRAINT ha_key PRIMARY KEY (ha_key)
 );
+ALTER system SET max_connections=1500;

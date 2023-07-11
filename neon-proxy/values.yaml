@@ -85,6 +85,9 @@ volumeMounts:
   - name: proxy-keys-script
     mountPath: /opt/proxy/run-indexer.sh
     subPath: run-indexer.sh
+  - name: proxy-keys-script
+    mountPath: /opt/run-gas-tank.sh
+    subPath: run-gas-tank.sh
 
 workingDir: "/opt"
 

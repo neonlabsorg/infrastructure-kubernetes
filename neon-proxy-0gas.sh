@@ -443,7 +443,7 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | 
       --set persistence.size=$GRAFANA_STORAGE_SIZE \
       --set adminUser=$GRAFANA_ADMIN_USER \
       --set ingress.enabled=$GRAFANA_INGRESS_ENABLED \
-      --set ingress.hosts={"34-36-252-31.nip.io"} \
+      --set ingress.host=$PROXY_HOST \
       --set ingress.className=$INGRESS_CLASS \
       --set ingress.path=$GRAFANA_INGRESS_PATH \
       --set adminPassword=$GRAFANA_ADMIN_PASSWD 1>/dev/null

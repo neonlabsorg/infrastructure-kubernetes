@@ -386,6 +386,7 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | 
     --force \
     --history-max 3 \
     --set solanaUrl=$SOLANA_URL \
+    --set ppsolanaUrl=$PP_SOLANA_URL \
     --set evm_loader=$EVM_LOADER \
     --set proxyCount=$PROXY_COUNT \
     --set keysPerProxy=$KEYS_PER_PROXY \
@@ -400,8 +401,6 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | 
     --set gas_indexer_erc20_wrapper_whitelist=ANY \
     --set gas_start_slot=CONTINUE \
     --wait --timeout=1h \
-#    --set minimal_gas_price=$MINIMAL_GAS_PRICE  \
-#    --set commit_level=$COMMIT_LEVEL \
 
 
 

@@ -3,7 +3,7 @@
 persistence:
   enabled: true
 
-dashboardProviders:
+dashboardProviders: 
   dashboardproviders.yaml:
     apiVersion: 1
     providers:
@@ -56,7 +56,7 @@ ingress:
   labels: {}
   path: /grafana
   pathType: Prefix
-  hosts: []
+  hosts:
+    - chart-example.local
   extraPaths: []
   tls: []
-# - 34-36-252-31.nip.io

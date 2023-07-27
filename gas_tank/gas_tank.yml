@@ -1,0 +1,26 @@
+version: "3"
+
+services:
+  gas_tank:
+      container_name: gas_tank
+      image: neonlabsorg/proxy:${REVISION}
+      environment:
+        # Database connection is the same with Proxy/Indexer 
+        POSTGRES_DB: neon-db         
+        POSTGRES_USER: neon-proxy
+        POSTGRES_PASSWORD: neon-proxy-pass
+        POSTGRES_HOST: postgres
+        
+        # Address of Solana node
+        SOLANA_URL: http://solana:8899
+        
+        # Start slot is the same as for Indexer
+        START_SLOT: CONTINUE
+        
+        # Addresses of monitored Tokens will be provided later
+        # INDEXER_ERC20_WRAPPER_WHITELIST: ANY
+        # ERC20_BRIDGE_CONTRACTS: ANY
+        # ERC20_BRIDGE_TOKENS_WHITELIST: ANY
+      hostname: gas_tank
+      entrypoint: ./run-gas-tank.sh
+    

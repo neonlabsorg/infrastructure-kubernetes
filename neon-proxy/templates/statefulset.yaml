@@ -62,7 +62,8 @@ spec:
                   values:
                   - neon-proxy
             topologyKey: "kubernetes.io/hostname"
-      {{- end }}               
+      {{- end }}
+      terminationGracePeriodSeconds: 120               
       containers:
         - name: proxy
           securityContext:

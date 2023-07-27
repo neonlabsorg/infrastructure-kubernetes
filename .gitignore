@@ -12,12 +12,13 @@ operator-keys-local
 operator-keypairs/*.json
 devnet-operators-keys
 gcp-operators-keys
-
+operator-1
 neon-proxy/charts/*.tgz
 tmp.txt
 
 config*.ini
-
+operator-keypairs-devnet
 *vault-keys*.json*
 config.ini*
 config.*
+vault-keys*

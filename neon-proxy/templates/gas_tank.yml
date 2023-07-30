@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: indexer
+  name: gas-tank
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "neon-proxy.labels" . | nindent 4 }}
@@ -48,10 +48,11 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
-          - name: MINIMAL_GAS_PRICE
-            value: "0"
-          - name: INDEXER_KEY
-            value: {{ .Values.indexer.indexerKey | toString | quote }}
+          - name: INDEXER_ERC20_WRAPPER_WHITELIST
+            value: {{ .Values.gas_indexer_erc20_wrapper_whitelist | toString | quote }}
+        {{- if .Values.envFrom }}    
+          - name: START_SLOT
+            value: {{ .Values.gas_start_slot | toString | quote }}
         {{- if .Values.envFrom }}
           envFrom:
           {{- toYaml .Values.envFrom | nindent 10 }}
@@ -59,12 +60,32 @@ spec:
         {{- if .Values.volumeMounts }}
           volumeMounts:
           {{- toYaml .Values.volumeMounts | nindent 10 }}
-        {{- end }}  
-          workingDir: /opt              
+        {{- end }}                
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           command: ["/bin/bash"]
-          args: ["proxy/run-indexer.sh"]
+          args: ["./run-gas-tank.sh"]
+      volumes:
+        {{- toYaml .Values.volumes | nindent 8 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+        {{- if .Values.envFrom }}
+          envFrom:
+          {{- toYaml .Values.envFrom | nindent 10 }}
+        {{- end }}
+        {{- if .Values.volumeMounts }}
+          volumeMounts:
+          {{- toYaml .Values.volumeMounts | nindent 10 }}
+        {{- end }}                
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          command: ["/bin/bash"]
+          args: ["./run-gas-tank.sh"]
       volumes:
         {{- toYaml .Values.volumes | nindent 8 }}
       {{- with .Values.nodeSelector }}
@@ -78,4 +99,6 @@ spec:
       {{- with .Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- end }}
       {{- end }}

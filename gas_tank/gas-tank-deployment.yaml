@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f gas_tank.yml
+    kompose.version: 1.28.0 (HEAD)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: gas-tank
+  name: gas-tank
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: gas-tank
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f gas_tank.yml
+        kompose.version: 1.28.0 (HEAD)
+      creationTimestamp: null
+      labels:
+        io.kompose.network/gas-tank-default: "true"
+        io.kompose.service: gas-tank
+    spec:
+      containers:
+        - command:
+            - ./run-gas-tank.sh
+          env:
+            - name: POSTGRES_DB
+              value: neon-db
+            - name: POSTGRES_HOST
+              value: postgres
+            - name: POSTGRES_PASSWORD
+              value: neon-proxy-pass
+            - name: POSTGRES_USER
+              value: neon-proxy
+            - name: SOLANA_URL
+              value: http://solana:8899
+            - name: START_SLOT
+              value: CONTINUE
+          image: neonlabsorg/proxy:${REVISION}
+          name: gas-tank
+          resources: {}
+      hostname: gas_tank
+      restartPolicy: Always
+status: {}

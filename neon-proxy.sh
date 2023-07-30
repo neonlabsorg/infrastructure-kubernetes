@@ -25,7 +25,6 @@ HELP="\nUsage: $0 [OPTION]...\n
   -i, Init setup \n
   -r, Read-only mode\n  
   -S, SOLANA_URL\n
-  -s, PP_SOLANA_URL\n
   -p, Set postgres admin password (can be used only with -i option) \n
   -v, Set vault root token (experemental) \n  
   -m, Use this option to set migrations\n
@@ -42,7 +41,6 @@ while getopts ":f:k:n:p:v:S:s:yhmird" opt; do
     p) CLI_POSTGRES_PASSWORD=${OPTARG} ;;
     v) CLI_VAULT_ROOT_TOKEN=${OPTARG} ;;    
     S) CLI_SOLANA_URL=${OPTARG} ;;
-    s) CLI_PP_SOLANA_URL=${OPTARG} ;;
     y) FORCE_APPLY=1 ;;
     m) DB_MIGRATION="true" ;;  
     i) FIRST_RUN="true";DB_MIGRATION="true" ;;
@@ -83,7 +81,6 @@ INDEXER_ENV=$(grep -Po 'IDX_\K.*' $VAR_FILE)
 [ ! $CLI_POSTGRES_PASSWORD ] || POSTGRES_ADMIN_PASSWD=$CLI_POSTGRES_PASSWORD
 [ ! $CLI_VAULT_ROOT_TOKEN ] || VAULT_ROOT_TOKEN=$CLI_VAULT_ROOT_TOKEN
 [ ! $CLI_SOLANA_URL ] || SOLANA_URL=$CLI_SOLANA_URL
-[ ! $CLI_PP_SOLANA_URL ] || PP_SOLANA_URL=$CLI_SOLANA_URL
 [ ! $CLI_KEY_DIR ] || KEY_DIR=$CLI_KEY_DIR
 [ ! $CLI_READONLY ] || PRX_ENABLE_SEND_TX_API="NO"
 [ $VAULT_NAMESPACE ] || VAULT_NAMESPACE=$NAMESPACE
@@ -288,6 +285,7 @@ helm upgrade --install --atomic postgres postgres/ \
   --set postgres.password=$POSTGRES_PASSWORD \
   --set service.port=$POSTGRES_PORT \
   --set postgres.ssl=$POSTGRES_SSL \
+  --set postgres.maxConnections=1000 \
   --set persistence.storageClass=$POSTGRES_STORAGE_CLASS \
   --set persistence.size=$POSTGRES_STORAGE_SIZE \
   --set migrate.enabled=$DB_MIGRATION 1>/dev/null
@@ -358,16 +356,38 @@ echo "Setup indexer env variables"
 kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | xargs vault kv put neon-proxy/indexer_env" 1>/dev/null
 
 ## 3. Proxy
+#[[ $NEON_PROXY_ENABLED != "true" ]] || {
+#  echo "Installing neon-proxy..."
+#  helm upgrade --install --atomic neon-proxy neon-proxy/ \
+#    --namespace=$NAMESPACE \
+#    --force \
+#    --history-max 3 \
+#    --set ingress.host=$PROXY_HOST \
+#    --set ingress.className=$INGRESS_CLASS \
+#    --set solanaUrl=$SOLANA_URL \
+#    --set proxyCount=$PROXY_COUNT \
+#    --set keysPerProxy=$KEYS_PER_PROXY \
+#    --set image.tag=$PROXY_VER \
+#    --set resources.requests.cpu=$PROXY_MIN_CPU \
+#    --set resources.requests.memory=$PROXY_MIN_MEM \
+#    --set resources.limits.cpu=$PROXY_MAX_CPU \
+#    --set resources.limits.memory=$PROXY_MAX_MEM \
+#    --set onePod.enabled=$ONE_PROXY_PER_NODE \
+#    --set-file indexer.indexerKey=$KEY_DIR/$INDEXER_KEY_FILE \
+#    --set ENABLE_SEND_TX_API=$PRX_ENABLE_SEND_TX_API \
+#    --set gas_indexer_erc20_wrapper_whitelist=ANY \
+#    --set gas_start_slot=LATEST \
+
+## 3. Proxy
 [[ $NEON_PROXY_ENABLED != "true" ]] || {
   echo "Installing neon-proxy..."
   helm upgrade --install --atomic neon-proxy neon-proxy/ \
     --namespace=$NAMESPACE \
     --force \
     --history-max 3 \
-    --set ingress.host=$PROXY_HOST \
-    --set ingress.className=$INGRESS_CLASS \
     --set solanaUrl=$SOLANA_URL \
     --set ppsolanaUrl=$PP_SOLANA_URL \
+    --set evm_loader=$EVM_LOADER \
     --set proxyCount=$PROXY_COUNT \
     --set keysPerProxy=$KEYS_PER_PROXY \
     --set image.tag=$PROXY_VER \
@@ -377,7 +397,12 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | 
     --set resources.limits.memory=$PROXY_MAX_MEM \
     --set onePod.enabled=$ONE_PROXY_PER_NODE \
     --set-file indexer.indexerKey=$KEY_DIR/$INDEXER_KEY_FILE \
-    --set ENABLE_SEND_TX_API=$PRX_ENABLE_SEND_TX_API
+    --set ENABLE_SEND_TX_API=$PRX_ENABLE_SEND_TX_API \
+    --set gas_indexer_erc20_wrapper_whitelist=ANY \
+    --set gas_start_slot=CONTINUE \
+    --wait --timeout=1h \
+
+
 
 
     kubectl -n ${NAMESPACE} wait --for=condition=ready pod neon-proxy-0 --timeout=1m || { 
@@ -438,9 +463,13 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | 
 
   
 [ $VAULT_TYPE == "dev" ] || [ ! $FIRST_RUN ] || echo -e "\n###################\nWARNING: Please copy and keep $VAULT_KEYS_FILE in safe place!\n###################\n"
-
+    
+    kubectl apply -f tracer/0-proxy-service.yaml
+    kubectl apply -f tracer/0-tracer-db-deployment.yaml
+    kubectl apply -f tracer/0-tracer-db-service.yaml
+    kubectl apply -f tracer/1-neon-tracer-service.yaml
     kubectl apply -f tracer/2-neon-rpc-deployment.yaml
     kubectl apply -f tracer/2-neon-rpc-service.yaml
 
     ###CREATING CRON TO CHECK VERSION AND UPGRADE/ROLLOUT
-    kubectl apply -f neon-proxy/update/cron.yaml
+    #kubectl apply -f neon-proxy/update/cron.yaml

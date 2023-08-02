@@ -6,28 +6,28 @@ envs=("devnet","testnet","mainnet")
 vault_types=("dev","standalone","ha")
 VAR_FILE="config.ini"
 
-[ "$(which kubectl)" ] || { 
+[ "$(which kubectl)" ] || {
     echo "ERROR: Kubectl not installed"
-    exit 1 
+    exit 1
 }
-[ "$(which helm)" ] || { 
+[ "$(which helm)" ] || {
     echo "ERROR: Helm not installed"
     exit 1
 }
 
-[ "$(which jq)" ] || { 
+[ "$(which jq)" ] || {
     echo "ERROR: jq not installed"
-    exit 1 
+    exit 1
 }
 
 HELP="\nUsage: $0 [OPTION]...\n
   -f, Variabels file \n
   -i, Init setup \n
-  -r, Read-only mode\n  
+  -r, Read-only mode\n
   -S, SOLANA_URL\n
   -s, PP_SOLANA_URL\n
   -p, Set postgres admin password (can be used only with -i option) \n
-  -v, Set vault root token (experemental) \n  
+  -v, Set vault root token (experemental) \n
   -m, Use this option to set migrations\n
   -k, Set keys directory \n
   -y, Assume \"yes\" as answer, run non-interactively \n
@@ -38,16 +38,16 @@ while getopts ":f:k:n:p:v:S:s:yhmird" opt; do
   case $opt in
     f) VAR_FILE=${OPTARG} ;;
     k) CLI_KEY_DIR=${OPTARG} ;;
-    n) CLI_NAMESPACE=${OPTARG}`` ;;  
+    n) CLI_NAMESPACE=${OPTARG}`` ;;
     p) CLI_POSTGRES_PASSWORD=${OPTARG} ;;
-    v) CLI_VAULT_ROOT_TOKEN=${OPTARG} ;;    
+    v) CLI_VAULT_ROOT_TOKEN=${OPTARG} ;;
     S) CLI_SOLANA_URL=${OPTARG} ;;
     s) CLI_PP_SOLANA_URL=${OPTARG} ;;
     y) FORCE_APPLY=1 ;;
-    m) DB_MIGRATION="true" ;;  
+    m) DB_MIGRATION="true" ;;
     i) FIRST_RUN="true";DB_MIGRATION="true" ;;
-    r) CLI_READONLY="true" ;;    
-    d) DESTROY="true" ;;    
+    r) CLI_READONLY="true" ;;
+    d) DESTROY="true" ;;
     h) echo -e $HELP;exit 0 ;;
     *) echo "Invalid option -$OPTARG" >&2
     exit 1
@@ -91,7 +91,7 @@ INDEXER_ENV=$(grep -Po 'IDX_\K.*' $VAR_FILE)
 
 [ ! $DESTROY ] || {
   read -p "Uninstall neon-proxy? [yes/no]: " -n 4 -r
-  [[ $REPLY != "yes" ]] || { 
+  [[ $REPLY != "yes" ]] || {
     kubectl delete -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
     kubectl delete ns $NAMESPACE
     [[ $VAULT_ENABLED != "true" ]] || [[ "$VAULT_NAMESPACE" == "$NAMESPACE" ]] || kubectl delete ns $VAULT_NAMESPACE
@@ -121,12 +121,12 @@ INDEXER_ENV=$(grep -Po 'IDX_\K.*' $VAR_FILE)
 }
 
 ## Check for operator keys
-[[ $PRX_ENABLE_SEND_TX_API == "NO" ]] || [ "$(ls $KEY_DIR/$KEY_MASK 2>/dev/null)" ] || { 
+[[ $PRX_ENABLE_SEND_TX_API == "NO" ]] || [ "$(ls $KEY_DIR/$KEY_MASK 2>/dev/null)" ] || {
     echo "ERROR: Keypairs not found in $KEY_DIR/"
     echo "$KEY_DIR/KEY_MASK"
     echo "Listing keys:"
     ls $KEY_DIR/$KEY_MASK
-    exit 1 
+    exit 1
 }
 
 ## Read key files to variable $OPERATOR_KEYS
@@ -139,7 +139,7 @@ INDEXER_ENV=$(grep -Po 'IDX_\K.*' $VAR_FILE)
     POSTGRES_HOST=$POSTGRES_HOST
     POSTGRES_DB=$POSTGRES_DB
     POSTGRES_USER=$POSTGRES_USER\n"
-    exit 1 
+    exit 1
 }
 
 [[ $vault_types[*] =~ $VAULT_TYPE ]] || {
@@ -159,7 +159,7 @@ function installVault() {
       connection_url = "postgres://'${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}'/vault?sslmode='${POSTGRES_SSL}'"
       ha_enabled = true
     }'
-  
+
   echo "Instlling vault in $VAULT_TYPE mode"
 
   if [[ $VAULT_TYPE = "dev" ]]
@@ -168,8 +168,8 @@ function installVault() {
     helm upgrade --install --atomic vault hashicorp/vault -f vault/values.yaml \
       --namespace=$VAULT_NAMESPACE  --create-namespace --history-max 3 \
       --set server.dev.devRootToken=$VAULT_ROOT_TOKEN \
-      --set server.dev.enabled=true 
-    kubectl wait --for=condition=ready pod vault-0 -n ${VAULT_NAMESPACE} 
+      --set server.dev.enabled=true
+    kubectl wait --for=condition=ready pod vault-0 -n ${VAULT_NAMESPACE}
   elif [[ $VAULT_TYPE = "standalone" ]]
   then
     helm upgrade --install --atomic vault hashicorp/vault -f vault/values.yaml \
@@ -182,10 +182,10 @@ function installVault() {
     kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- vault operator init -key-shares=${VAULT_KEY_SHARED} -key-threshold=${VAULT_KEY_THRESHOLD} -format=json > $VAULT_KEYS_FILE
     VAULT_UNSEAL_KEY="$(cat $VAULT_KEYS_FILE | jq -r '.unseal_keys_b64[]')"
     VAULT_ROOT_TOKEN="$(cat $VAULT_KEYS_FILE | jq -r '.root_token')"
-    
+
     kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault operator unseal ${VAULT_UNSEAL_KEY}" 1>/dev/null
   elif [[ $VAULT_TYPE = "ha" ]]
-  then  
+  then
     helm upgrade --install --atomic vault hashicorp/vault -f vault/values.yaml \
       --namespace=$VAULT_NAMESPACE  --create-namespace --history-max 3 \
       --set server.dev.enabled=false \
@@ -196,7 +196,7 @@ function installVault() {
     for i in $(seq 0 $((VAULT_HA_REPLICAS-1)))
     do
       kubectl -n ${VAULT_NAMESPACE} exec vault-$i -- /bin/sh -c "vault operator unseal ${VAULT_UNSEAL_KEY}" 1>/dev/null
-    done    
+    done
     kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- vault operator init -key-shares=${VAULT_KEY_SHARED} -key-threshold=${VAULT_KEY_THRESHOLD} -format=json > $VAULT_KEYS_FILE
     VAULT_UNSEAL_KEY="$(cat $VAULT_KEYS_FILE | jq -r '.unseal_keys_b64[]')"
     VAULT_ROOT_TOKEN="$(cat $VAULT_KEYS_FILE | jq -r '.root_token')"
@@ -228,16 +228,16 @@ NEON_PROXY_ENABLED=$NEON_PROXY_ENABLED
   p=$PROXY_COUNT
   kp=$(( k / p ))
 
-  [ $kp -gt 0 ] || { 
+  [ $kp -gt 0 ] || {
       echo "ERROR: The number of proxies cannot be more than the adjusted keys"
-      exit 1 
+      exit 1
   }
 }
 
 ## Ask user if they are satisfied with the launch options
 [ $FORCE_APPLY ] || {
   read -p "Continue? [y/N]" -n 1 -r
-  [[ $REPLY =~ ^[Yy]$ ]] || exit 0 
+  [[ $REPLY =~ ^[Yy]$ ]] || exit 0
 }
 
 # ## RUN
@@ -258,8 +258,13 @@ kubectl create namespace $NAMESPACE 2>/dev/null
   --namespace ingress-nginx --create-namespace \
   --history-max 3 \
   --set controller.service.type=$INGRESS_SERVICE_TYPE \
+  --set controller.service.loadBalancerIP=$INGRESS_LB_STATIC_IP \
   --set controller.service.nodePorts.http=32080 \
   --set controller.service.nodePorts.https=32443  1>/dev/null
+}
+
+[[ $INGRESS_SSL_CERTIFICATE != "true" ]] || {
+  kubectl -n ${NAMESPACE} create secret tls $INGRESS_SSL_SECRET_NAME --cert $INGRESS_SSL_CERT_PATH --key $INGRESS_SSL_CERT_KEY_PATH
 }
 
 ## 2. Postgres
@@ -292,16 +297,16 @@ helm upgrade --install --atomic postgres postgres/ \
   --set persistence.size=$POSTGRES_STORAGE_SIZE \
   --set migrate.enabled=$DB_MIGRATION 1>/dev/null
 
-[[ $POSTGRES_ENABLED == "false" ]] || kubectl -n ${NAMESPACE} wait --for=condition=ready pod postgres-0 || { 
+[[ $POSTGRES_ENABLED == "false" ]] || kubectl -n ${NAMESPACE} wait --for=condition=ready pod postgres-0 || {
     echo "ERROR: Postgres installation failed"
-    exit 1 
+    exit 1
 }
 
 # ## 2. Vault
 echo "Setup secrets..."
 [[ ! $FIRST_RUN ]] || [[  $VAULT_ENABLED != "true" ]] || {
-  [[ ! -f "$VAULT_KEYS_FILE" ]] || { 
-    echo "Found $VAULT_KEYS_FILE -- Backuping..." 
+  [[ ! -f "$VAULT_KEYS_FILE" ]] || {
+    echo "Found $VAULT_KEYS_FILE -- Backuping..."
     cp $VAULT_KEYS_FILE ${VAULT_KEYS_FILE}_bkp
   }
   [[ $(kubectl -n ${VAULT_NAMESPACE} get po vault-0 2>/dev/null)  ]] || {
@@ -317,17 +322,17 @@ echo "Check vault token"
   [[ $VAULT_UNSEAL_KEY ]] || [[ ! -f "$VAULT_KEYS_FILE" ]] || {
     VAULT_UNSEAL_KEY="$(cat $VAULT_KEYS_FILE | jq -r '.unseal_keys_b64[]')"
     [[ $VAULT_UNSEAL_KEY ]] || echo -e "\n###################\nWARNING: VAULT_UNSEAL_KEY no foud! Please make sure Vault is available\n###################\n"
-    kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault operator unseal ${VAULT_UNSEAL_KEY}" 
+    kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault operator unseal ${VAULT_UNSEAL_KEY}"
   }
   [[ $VAULT_ROOT_TOKEN ]] || {
     echo "ERROR: No VAULT_ROOT_TOKEN found"
     exit 1
-  }    
+  }
 }
 
 kubectl -n ${VAULT_NAMESPACE} wait --for=condition=ready pod vault-0 || {
     echo "ERROR: Vault installation failed"
-    exit 1   
+    exit 1
 }
 
 kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROOT_TOKEN" 1>/dev/null
@@ -378,6 +383,10 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | 
     --set onePod.enabled=$ONE_PROXY_PER_NODE \
     --set-file indexer.indexerKey=$KEY_DIR/$INDEXER_KEY_FILE \
     --set ENABLE_SEND_TX_API=$PRX_ENABLE_SEND_TX_API \
+    --set ingress.host=$PROXY_HOST \
+    --set ingress.sslCertificate=$INGRESS_SSL_CERTIFICATE \
+    --set ingress.sslDomain=$INGRESS_SSL_DOMAIN \
+    --set ingress.sslSecretName=$INGRESS_SSL_SECRET_NAME \
     --set minimal_gas_price=$MINIMAL_GAS_PRICE \
     --set gas_indexer_erc20_wrapper_whitelist=ANY \
     --set gas_start_slot="CONTINUE"
@@ -385,7 +394,7 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | 
 
 
 
-    kubectl -n ${NAMESPACE} wait --for=condition=ready pod neon-proxy-0 --timeout=1m || { 
+    kubectl -n ${NAMESPACE} wait --for=condition=ready pod neon-proxy-0 --timeout=1m || {
       echo "ERROR: Proxy installation failed"
       exit 1
     }
@@ -397,7 +406,7 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | 
 }
 
 ## 4. Monitoring
-[[ $MONITORING_ENABLED != "true" ]] || { 
+[[ $MONITORING_ENABLED != "true" ]] || {
   [[ $PROMETHEUS_ENABLED != "true" ]] || {
     echo "Installing prometheus"
     helm upgrade --install kube-state-metrics prometheus-community/kube-state-metrics --namespace=$MONITORING_NAMESPACE 1>/dev/null
@@ -410,7 +419,7 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | 
       --set server.persistentVolume.size=$PROMETHEUS_STORAGE_SIZE \
       --set alertmanager.persistence.storageClass=$PROMETHEUS_STORAGE_CLASS \
       --set alertmanager.persistence.size=$PROMETHEUS_STORAGE_SIZE \
-      --set server.ingress.host=$PROXY_HOST \
+      --set server.ingress.host={$PROXY_HOST} \
       --set server.ingress.className=$INGRESS_CLASS \
       --set server.ingress.path=$PROMETHEUS_INGRESS_PATH \
       --set-file extraScrapeConfigs=monitoring/prometheus/extraScrapeConfigs.yaml 1>/dev/null
@@ -440,10 +449,10 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | 
       --set adminPassword=$GRAFANA_ADMIN_PASSWD 1>/dev/null
   }
 }
+#      --set ingress.hosts=$PROXY_HOST \
 
-  
 [ $VAULT_TYPE == "dev" ] || [ ! $FIRST_RUN ] || echo -e "\n###################\nWARNING: Please copy and keep $VAULT_KEYS_FILE in safe place!\n###################\n"
-    
+
     kubectl apply -f tracer/0-proxy-service.yaml
     kubectl apply -f tracer/0-tracer-db-deployment.yaml
     kubectl apply -f tracer/0-tracer-db-service.yaml

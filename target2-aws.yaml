@@ -1,0 +1,27 @@
+apiVersion: elbv2.k8s.aws/v1beta1
+kind: TargetGroupBinding
+metadata:
+  finalizers:
+  - elbv2.k8s.aws/resources
+  generation: 1
+  labels:
+    ingress.k8s.aws/stack-name: neon-proxy-ing
+    ingress.k8s.aws/stack-namespace: neon-proxy
+  name: k8s-neonprox-ingress-nginx-controller
+  namespace: neon-proxy
+spec:
+  ipAddressType: ipv4
+  networking:
+    ingress:
+    - from:
+      - securityGroup:
+          groupID: sg-0c02eff7214881fa0
+      ports:
+      - port: 80
+        protocol: TCP
+  serviceRef:
+    name: ingress-nginx-controller
+    port: 80
+  targetType: ip
+status:
+  observedGeneration: 1

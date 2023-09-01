@@ -27,18 +27,15 @@ INGRESS_SERVICE_TYPE="NodePort"
 ## SOLANA
 ################
 ## There is an option to use the -S option to set this variable
-
-#GLOBAL Envs for all pods/containers:
 SOLANA_URL=
-EVM_LOADER=""
-MINIMAL_GAS_PRICE="0"
-COMMIT_LEVEL="safe"
-PERM_ACCOUNT_LIMIT="1"
+## Solana RPC url. If disabled will be the same as $SOLANA_URL
+#PP_SOLANA_URL=
+
 
 ################
 ## PROXY
 ################
-PROXY_VER="v0.15.23"
+PROXY_VER="v0.15.0"
 ## Proxy pods count
 PROXY_COUNT=2
 
@@ -49,7 +46,6 @@ KEYS_PER_PROXY=20
 
 PROXY_MIN_CPU="500m"
 PROXY_MIN_MEM="1Gi"
-
 PROXY_MAX_CPU="1000m"
 PROXY_MAX_MEM="4Gi"
 
@@ -61,23 +57,19 @@ PRX_PROXY_URL=""
 PRX_LOG_NEON_CLI_DEBUG="YES"
 PRX_FUZZING_BLOCKHASH="NO"
 PRX_LOG_FULL_OBJECT_INFO="YES"
-PRX_CONFIG="custom"
+PRX_CONFIG="ci"
 PRX_PYTH_MAPPING_ACCOUNT=""
 PRX_MIN_OPERATOR_BALANCE_TO_WARN="4565760000"
 PRX_MIN_OPERATOR_BALANCE_TO_ERR="913152000"
-PRX_MINIMAL_GAS_PRICE="0"
-PRX_ENABLE_PRIVATE_API="NO"
+PRX_MINIMAL_GAS_PRICE="1"
+PRX_ENABLE_PRIVATE_API="YES"
 PRX_ALLOW_UNDERPRICED_TX_WITHOUT_CHAINID="YES"
 PRX_EVM_LOADER=""
 PRX_NEON_CLI_TIMEOUT="10"
 PRX_CONFIRM_TIMEOUT="15"
-PRX_PERM_ACCOUNT_LIMIT="6"
+PRX_PERM_ACCOUNT_LIMIT="1"
 PRX_ENABLE_SEND_TX_API="YES"
 PRX_GATHER_STATISTICS="YES"
-PRX_RETRY_ON_FAIL="15"
-PRX_FUZZING_BLOCKHASH="NO"
-PRX_HOLDER_SIZE="262144"
-
 
 ## INDEXER ENV
 IDX_GATHER_STATISTICS="YES"
@@ -85,7 +77,8 @@ IDX_LOG_FULL_OBJECT_INFO="NO"
 
 ## GAS-TANK
 INDEXER_ERC20_WRAPPER_WHITELIST="ANY"
-START_SLOT="CONTINUE"
+START_SLOT="LATEST"
+
 
 ################
 ## Postgres
@@ -93,30 +86,31 @@ START_SLOT="CONTINUE"
 
 POSTGRES_HOST="postgres"
 POSTGRES_DB="neon-db"
-POSTGRES_USER="neon-proxy"
 POSTGRES_PORT="5432"
+
+## sslmode values: "disable", "allow", "prefer", "require", "verify-ca" or "verify-full"
 POSTGRES_SSL="allow"
 
-#for k8s postgres only
-POSTGRES_STORAGE_CLASS="default"
-POSTGRES_STORAGE_SIZE="50Gi"
-
+POSTGRES_USER="neon-proxy"
+## If disabled, the password will be randomly generated.
 ## Use this command to show password:
 ## kubectl get secret postgres-secret --template={{.data.POSTGRES_PASSWORD}} -n neon-proxy | base64 --decode
-POSTGRES_PASSWORD="password"
+#POSTGRES_PASSWORD="password"
 
 POSTGRES_ADMIN_USER="postgres"
 #POSTGRES_ADMIN_PASSWD=""
 
 ## Skiped if POSTGRES_ENABLED="false"
 #POSTGRES_FS_ID=
+POSTGRES_STORAGE_CLASS="default"
+POSTGRES_STORAGE_SIZE="10Gi"
 
 
 ################
 ## Vault
 ################
 ## "dev","standalone" or "ha"
-VAULT_TYPE="dev"
+VAULT_TYPE="standalone"
 
 VAULT_DEV_TOKEN="root"
 #VAULT_ROOT_TOKEN=""

@@ -48,6 +48,8 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
+          - name: MINIMAL_GAS_PRICE
+            value: "0"
           - name: INDEXER_KEY
             value: {{ .Values.indexer.indexerKey | toString | quote }}
         {{- if .Values.envFrom }}
@@ -57,7 +59,8 @@ spec:
         {{- if .Values.volumeMounts }}
           volumeMounts:
           {{- toYaml .Values.volumeMounts | nindent 10 }}
-        {{- end }}                
+        {{- end }}  
+          workingDir: /opt              
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           command: ["/bin/bash"]

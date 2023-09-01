@@ -39,6 +39,11 @@ persistence:
   size: "50Gi"
   storageClass: ""
 
+#
+postgresql:
+  maxConnections: 2000
+#
+
 env:
   - name: MAX_CONNECTIONS
     value: "1000"
@@ -60,3 +65,6 @@ volumeMounts:
     subPath: vault.sql
   - name: postgresdata
     mountPath: /var/lib/postgresql/data/
+
+extendedConfiguration: |
+        max_connections = 2000

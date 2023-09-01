@@ -165,6 +165,7 @@
     CREATE INDEX IF NOT EXISTS idx_neon_transactions_block_slot_tx_idx ON neon_transactions(block_slot, tx_idx);
     CREATE INDEX IF NOT EXISTS idx_neon_transactions_sender_nonce_block ON neon_transactions(from_addr, nonce, block_slot);
 
+
     CREATE TABLE IF NOT EXISTS solana_alt_transactions (
         sol_sig TEXT,
         block_slot BIGINT,

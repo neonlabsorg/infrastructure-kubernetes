@@ -40,7 +40,10 @@ spec:
           livenessProbe:
             exec:
               command:
-                - pg_isready -h tracer_db -p 5432 -U solana-user
+                - sh
+                - -c
+                - |
+                  pg_isready -h localhost -p 5432 -U solana-user
             failureThreshold: 10
             periodSeconds: 5
             timeoutSeconds: 10

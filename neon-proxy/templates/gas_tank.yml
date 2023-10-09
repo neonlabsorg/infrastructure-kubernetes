@@ -9,6 +9,7 @@ metadata:
 spec:
   selector:
     matchLabels:
+      application-pod: neon-proxy-gas-tank
       {{- include "neon-proxy.selectorLabels" . | nindent 6 }}
   template:
     metadata:
@@ -33,7 +34,7 @@ spec:
             {{ end }}
           {{- end }}`}}       
       labels:
-        application-pod: neon-proxy-indexer
+        application-pod: neon-proxy-gas-tank
         {{- include "neon-proxy.selectorLabels" . | nindent 8 }}
     spec:
       serviceAccountName: {{ .Values.serviceAccount.name }}

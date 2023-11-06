@@ -75,7 +75,7 @@ done
 ## Read *.ini file
 source $VAR_FILE
 PROXY_ENV=$(grep -Po '^PRX_\K.*' $VAR_FILE)
-INDEXER_ENV=$(grep -Po '^IDX_\K.*' $VAR_FILE) 
+INDEXER_ENV=$(grep -Po '^IDX_\K.*' $VAR_FILE)
 
 
 # Set values from a command line

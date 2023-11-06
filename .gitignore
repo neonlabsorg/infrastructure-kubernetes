@@ -14,6 +14,7 @@ devnet-operators-keys
 gcp-operators-keys
 operator-1
 neon-proxy/charts/*.tgz
+mainnet-keys/
 tmp.txt
 
 config*.ini

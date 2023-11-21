@@ -8,6 +8,7 @@ ingress:
   enabled: true
   className: "nginx"
   host: ""
+  whitelistSourceRange: ""
 
 image:
   repository: neonlabsorg/proxy

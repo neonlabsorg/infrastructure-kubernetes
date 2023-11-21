@@ -380,7 +380,8 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | 
     --set ENABLE_SEND_TX_API=$PRX_ENABLE_SEND_TX_API \
     --set minimal_gas_price=$MINIMAL_GAS_PRICE \
     --set gas_indexer_erc20_wrapper_whitelist=ANY \
-    --set gas_start_slot="CONTINUE"
+    --set gas_start_slot="CONTINUE" \
+    --set ingress.whitelistSourceRange="`echo $PROXY_WHITELIST | sed -r 's/,/\\\,/g'`"
     #--set ppsolanaUrl=$PP_SOLANA_URL \
 
 

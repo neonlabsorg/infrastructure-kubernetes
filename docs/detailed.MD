@@ -50,7 +50,7 @@
   
    - Postgresql database inside kubernetes as a pod.  `POSTGRES_ENABLED="true" ` 
    
-   - Use your external database from the kubernetes cluster to your own PostgreSQL database such as RDS(AWS), CloudSQL(GCP) or other bare metal or Virtual Machine based install. (Recommended for production)   `POSTGRES_ENABLED="true" ` and then set the following:
+   - Use your external database from the kubernetes cluster to your own PostgreSQL database such as RDS(AWS), CloudSQL(GCP) or other bare metal or Virtual Machine based install. (Recommended for production)   `POSTGRES_ENABLED="false" ` and then set the following:
    
    - `POSTGRES_HOST="postgres" `
    - `POSTGRES_DB="neon-db"`

@@ -1,0 +1,35 @@
+namespace:
+  monitoring: 'neon-proxy'
+  system: 'neon-proxy'
+
+metrics_server:
+  installed: false
+
+prometheus:
+  installed: false
+  server.persistentVolume.storageClass: 'standard'
+  server.persistentVolume.size: '3Gi'
+  alertmanager.persistence.storageClass: 'standard'
+  alertmanager.persistence.size: '3Gi'
+  server.ingress.host: ''
+  server.ingress.className: 'nginx'
+  server.ingress.path: '/prometheus'
+
+loki:
+  installed: true
+  singleBinary.persistence.storageClass: 'standard'
+  singleBinary.persistence.size: '3Gi'
+
+promtail:
+  installed: false
+
+grafana:
+  installed: false
+  persistence.storageClassName: 'standard'
+  persistence.size: '3Gi'
+  ingress.enabled: 'true'
+  ingress.host: ''
+  ingress.className: 'nginx'
+  ingress.path: '/grafana'
+  adminUser: 'admin'
+  adminPassword: 'grafana'

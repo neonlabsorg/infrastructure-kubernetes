@@ -14,6 +14,10 @@ VAR_FILE="config.ini"
     echo "ERROR: Helm not installed"
     exit 1
 }
+[ "$(which helmfile)" ] || { 
+    echo "ERROR: Helmfile not installed"
+    exit 1
+}
 
 [ "$(which jq)" ] || { 
     echo "ERROR: jq not installed"
@@ -417,49 +421,111 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | 
 }
 
 ## 4. Monitoring
-[[ $MONITORING_ENABLED != "true" ]] || { 
-  [[ $PROMETHEUS_ENABLED != "true" ]] || {
-    echo "Installing prometheus"
-    helm upgrade --install kube-state-metrics prometheus-community/kube-state-metrics --namespace=$MONITORING_NAMESPACE 1>/dev/null
-    kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml 1>/dev/null
-    helm upgrade --install prometheus prometheus-community/prometheus \
-      -f monitoring/prometheus/values.yaml \
-      --namespace=$MONITORING_NAMESPACE \
-      --history-max 3 \
-      --set server.persistentVolume.storageClass=$PROMETHEUS_STORAGE_CLASS \
-      --set server.persistentVolume.size=$PROMETHEUS_STORAGE_SIZE \
-      --set alertmanager.persistence.storageClass=$PROMETHEUS_STORAGE_CLASS \
-      --set alertmanager.persistence.size=$PROMETHEUS_STORAGE_SIZE \
-      --set server.ingress.host=$PROXY_HOST \
-      --set server.ingress.className=$INGRESS_CLASS \
-      --set server.ingress.path=$PROMETHEUS_INGRESS_PATH \
-      --set-file extraScrapeConfigs=monitoring/prometheus/extraScrapeConfigs.yaml 1>/dev/null
-  }
 
-  [[ $LOKI_ENABLED != "true" ]] || {
-    echo "Installing Loki..."
-    helm upgrade --install loki grafana/loki-stack \
-      -f monitoring/loki/values.yaml \
-      --namespace=$MONITORING_NAMESPACE \
-      --history-max 3 1>/dev/null
-  }
 
-  [[ $GRAFANA_ENABLED != "true" ]] || {
-    echo "Installing Grafana..."
-    helm upgrade --install grafana grafana/grafana \
-      -f monitoring/grafana/values.yaml \
-      --namespace=$MONITORING_NAMESPACE \
-      --history-max 3 \
-      --set persistence.storageClassName=$GRAFANA_STORAGE_CLASS \
-      --set persistence.size=$GRAFANA_STORAGE_SIZE \
-      --set adminUser=$GRAFANA_ADMIN_USER \
-      --set ingress.enabled=$GRAFANA_INGRESS_ENABLED \
-      --set ingress.host=$PROXY_HOST \
-      --set ingress.className=$INGRESS_CLASS \
-      --set ingress.path=$GRAFANA_INGRESS_PATH \
-      --set adminPassword=$GRAFANA_ADMIN_PASSWD 1>/dev/null
-  }
+[[ $MONITORING_ENABLED != "true" ]] || {
+
+#Install helm-diff plugin 
+if helm plugin list | grep -q "diff"; then
+    echo "Helm diff plugin is already installed."
+else
+    # Install helm-diff plugin
+    helm plugin install https://github.com/databus23/helm-diff
+    echo "Helm diff plugin has been installed."
+fi
+
+
+# Prepare values helmfile
+values_yaml=$(cat <<EOF
+namespace:
+  monitoring: $NAMESPACE
+  system: $MONITORING_NAMESPACE
+
+metrics_server:
+  installed: true
+
+prometheus:
+  installed: $PROMETHEUS_ENABLED
+  server.persistentVolume.storageClass: $PROMETHEUS_STORAGE_CLASS
+  server.persistentVolume.size: $PROMETHEUS_STORAGE_SIZE
+  alertmanager.persistence.storageClass: $PROMETHEUS_STORAGE_CLASS
+  alertmanager.persistence.size: $PROMETHEUS_STORAGE_SIZE
+  server.ingress.host: $PROXY_HOST
+  server.ingress.className: $INGRESS_CLASS
+  server.ingress.path: $PROMETHEUS_INGRESS_PATH
+
+loki:
+  installed: $LOKI_ENABLED
+  singleBinary.persistence.storageClass: $LOKI_STORAGE_CLASS
+  singleBinary.persistence.size: $LOKI_STORAGE_SIZE
+
+promtail:
+  installed: $LOKI_ENABLED
+
+grafana:
+  installed: $GRAFANA_ENABLED
+  persistence.storageClassName: $GRAFANA_STORAGE_CLASS
+  persistence.size: $GRAFANA_STORAGE_SIZE
+  ingress.enabled: $GRAFANA_INGRESS_ENABLED
+  ingress.host: $PROXY_HOST
+  ingress.className: $INGRESS_CLASS
+  ingress.path: $GRAFANA_INGRESS_PATH
+  adminUser: $GRAFANA_ADMIN_USER
+  adminPassword: $GRAFANA_ADMIN_PASSWD
+EOF
+)
+
+# Run helmfile
+echo "Installing monitoring components"
+helmfile --file helmfile_config/helmfile.yaml --state-values-file <(echo "$values_yaml") sync
 }
+
+
+
+
+# [[ $MONITORING_ENABLED != "true" ]] || { 
+#   [[ $PROMETHEUS_ENABLED != "true" ]] || {
+#     echo "Installing prometheus"
+#     helm upgrade --install kube-state-metrics prometheus-community/kube-state-metrics --namespace=$MONITORING_NAMESPACE 1>/dev/null
+#     kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml 1>/dev/null
+#     helm upgrade --install prometheus prometheus-community/prometheus \
+#       -f monitoring/prometheus/values.yaml \
+#       --namespace=$MONITORING_NAMESPACE \
+#       --history-max 3 \
+#       --set server.persistentVolume.storageClass=$PROMETHEUS_STORAGE_CLASS \
+#       --set server.persistentVolume.size=$PROMETHEUS_STORAGE_SIZE \
+#       --set alertmanager.persistence.storageClass=$PROMETHEUS_STORAGE_CLASS \
+#       --set alertmanager.persistence.size=$PROMETHEUS_STORAGE_SIZE \
+#       --set server.ingress.host=$PROXY_HOST \
+#       --set server.ingress.className=$INGRESS_CLASS \
+#       --set server.ingress.path=$PROMETHEUS_INGRESS_PATH \
+#       --set-file extraScrapeConfigs=monitoring/prometheus/extraScrapeConfigs.yaml 1>/dev/null
+#   }
+
+#   [[ $LOKI_ENABLED != "true" ]] || {
+#     echo "Installing Loki..."
+#     helm upgrade --install loki grafana/loki-stack \
+#       -f monitoring/loki/values.yaml \
+#       --namespace=$MONITORING_NAMESPACE \
+#       --history-max 3 1>/dev/null
+#   }
+
+#   [[ $GRAFANA_ENABLED != "true" ]] || {
+#     echo "Installing Grafana..."
+#     helm upgrade --install grafana grafana/grafana \
+#       -f monitoring/grafana/values.yaml \
+#       --namespace=$MONITORING_NAMESPACE \
+#       --history-max 3 \
+#       --set persistence.storageClassName=$GRAFANA_STORAGE_CLASS \
+#       --set persistence.size=$GRAFANA_STORAGE_SIZE \
+#       --set adminUser=$GRAFANA_ADMIN_USER \
+#       --set ingress.enabled=$GRAFANA_INGRESS_ENABLED \
+#       --set ingress.host=$PROXY_HOST \
+#       --set ingress.className=$INGRESS_CLASS \
+#       --set ingress.path=$GRAFANA_INGRESS_PATH \
+#       --set adminPassword=$GRAFANA_ADMIN_PASSWD 1>/dev/null
+#   }
+# }
 
   
 [ $VAULT_TYPE == "dev" ] || [ ! $FIRST_RUN ] || echo -e "\n###################\nWARNING: Please copy and keep $VAULT_KEYS_FILE in safe place!\n###################\n"

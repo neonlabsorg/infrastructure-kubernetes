@@ -18,17 +18,17 @@ spec:
         checksum/secret: {{ include (print $.Template.BasePath "/proxy-config.yaml") . | sha256sum }}  
         vault.hashicorp.com/agent-inject: "true"
         vault.hashicorp.com/agent-inject-status: "update"
-        vault.hashicorp.com/role: "neon-proxy"
-        vault.hashicorp.com/agent-inject-secret-proxy-env: "neon-proxy/data/proxy_env"
+        vault.hashicorp.com/role: {{ .Release.Namespace }}
+        vault.hashicorp.com/agent-inject-secret-proxy-env: {{ print .Release.Namespace "/data/proxy_env" }}
         vault.hashicorp.com/agent-inject-template-proxy-env: |
-          {{`{{- with secret "neon-proxy/data/proxy_env" -}}
+          {{`{{- with secret "`}}{{.Release.Namespace }}{{`/data/proxy_env" -}}
             {{ range $k, $v := .Data.data }}
             export  {{ $k }}={{ $v }}
             {{ end }}
           {{- end }}`}}  
-        vault.hashicorp.com/agent-inject-secret-indexer-env: "neon-proxy/data/indexer_env"
+        vault.hashicorp.com/agent-inject-secret-indexer-env: {{ print .Release.Namespace "/data/indexer_env" }}
         vault.hashicorp.com/agent-inject-template-indexer-env: |
-          {{`{{- with secret "neon-proxy/data/indexer_env" -}}
+          {{`{{- with secret "`}}{{.Release.Namespace }}{{`/data/indexer_env" -}}
             {{ range $k, $v := .Data.data }}
             export  {{ $k }}={{ $v }}
             {{ end }}

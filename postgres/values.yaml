@@ -65,6 +65,7 @@ volumeMounts:
     subPath: vault.sql
   - name: postgresdata
     mountPath: /var/lib/postgresql/data/
+    subPath: pgdata
 
 extendedConfiguration: |
         max_connections = 2000

@@ -18,6 +18,7 @@ spec:
   replicas: {{ .Values.proxyCount }}
   selector:
     matchLabels:
+      application-pod: neon-proxy
       {{- include "neon-proxy.selectorLabels" . | nindent 6 }}
   template:
     metadata:
@@ -26,19 +27,19 @@ spec:
         checksum/secret: {{ include (print $.Template.BasePath "/proxy-config.yaml") . | sha256sum }}  
         vault.hashicorp.com/agent-inject: "true"
         vault.hashicorp.com/agent-inject-status: "update"
-        vault.hashicorp.com/role: "neon-proxy"
+        vault.hashicorp.com/role: {{ .Release.Namespace }}
         {{- if eq .Values.ENABLE_SEND_TX_API "YES" }} 
-        vault.hashicorp.com/agent-inject-secret-operator-keys: "neon-proxy/data/proxy"
+        vault.hashicorp.com/agent-inject-secret-operator-keys: {{ .Release.Namespace }}/data/proxy
         vault.hashicorp.com/agent-inject-template-operator-keys: |
-          {{`{{- with secret "neon-proxy/data/proxy" -}}
+          {{`{{- with secret "`}}{{.Release.Namespace }}{{`/data/proxy" -}}
             {{ range $k, $v := .Data.data }}
             {{ $k }}: {{ $v }}
             {{ end }}
           {{- end -}}`}}
         {{- end }}
-        vault.hashicorp.com/agent-inject-secret-proxy-env: "neon-proxy/data/proxy_env"
+        vault.hashicorp.com/agent-inject-secret-proxy-env: {{ .Release.Namespace }}/data/proxy_env
         vault.hashicorp.com/agent-inject-template-proxy-env: |
-          {{`{{- with secret "neon-proxy/data/proxy_env" -}}
+          {{`{{- with secret "`}}{{.Release.Namespace }}{{`/data/proxy_env" -}}
             {{ range $k, $v := .Data.data }}
             export  {{ $k }}={{ $v }}
             {{ end }}

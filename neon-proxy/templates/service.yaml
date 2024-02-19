@@ -4,6 +4,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   name:  {{ .Values.service.name }}
   labels:
+    application-pod: neon-proxy
     {{- include "neon-proxy.labels" . | nindent 4 }}
   annotations:
     cloud.google.com/neg: '{"ingress": true}'    
@@ -29,6 +30,7 @@ spec:
   {{- end }}      
   selector:
     application-pod: neon-proxy
+    {{- include "neon-proxy.selectorLabels" . | nindent 4 }}
 
 ---
 apiVersion: v1
@@ -37,6 +39,7 @@ metadata:
   namespace: {{ .Values.namespace }}
   name: {{ .Values.indexer.service.name }}
   labels:
+    application-pod: neon-proxy-indexer
     {{- include "neon-proxy.labels" . | nindent 4 }}
 spec:
   type: {{ .Values.indexer.service.type }}

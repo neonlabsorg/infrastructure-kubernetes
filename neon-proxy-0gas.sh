@@ -290,7 +290,9 @@ helm upgrade --install --atomic postgres postgres/ \
   --set postgres.ssl=$POSTGRES_SSL \
   --set persistence.storageClass=$POSTGRES_STORAGE_CLASS \
   --set persistence.size=$POSTGRES_STORAGE_SIZE \
-  --set migrate.enabled=$DB_MIGRATION 1>/dev/null
+  --set migrate.enabled=$DB_MIGRATION \
+  --set env[0].name=PGDATA \
+  --set env[0].value=/var/lib/postgresql/data/pgdata 1>/dev/null
 
 [[ $POSTGRES_ENABLED == "false" ]] || kubectl -n ${NAMESPACE} wait --for=condition=ready pod postgres-0 || { 
     echo "ERROR: Postgres installation failed"
@@ -335,7 +337,7 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROO
 [[ ! $FIRST_RUN ]] || {
   echo "Setup vault"
   kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "export NAMESPACE=$NAMESPACE && `cat vault/vault.sh`" 1>/dev/null
-  kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault write auth/kubernetes/role/${NAMESPACE} bound_service_account_names=neon-proxy-sa bound_service_account_namespaces=${NAMESPACE} policies=neon-proxy ttl=24h" 1>/dev/null
+  kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault write auth/kubernetes/role/${NAMESPACE} bound_service_account_names=neon-proxy-sa bound_service_account_namespaces=${NAMESPACE} policies=${NAMESPACE} ttl=24h" 1>/dev/null
 }
 
 if [[ $PRX_ENABLE_SEND_TX_API == "YES" ]]
@@ -346,16 +348,16 @@ then
   do
     echo "Add keys for neon-proxy-${id}"
     part=( "${OPERATOR_KEYS[@]:i:KEYS_PER_PROXY}" )
-    [ $id != 0 ] || kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault kv put neon-proxy/proxy neon-proxy-${id}=\"${part[*]}\"" 1>/dev/null
-    kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault kv patch neon-proxy/proxy neon-proxy-${id}=\"${part[*]}\"" 1>/dev/null
+    [ $id != 0 ] || kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault kv put ${NAMESPACE}/proxy neon-proxy-${id}=\"${part[*]}\"" 1>/dev/null
+    kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault kv patch ${NAMESPACE}/proxy neon-proxy-${id}=\"${part[*]}\"" 1>/dev/null
     id=$((id+1))
   done
 fi
 
 echo "Setup proxy env variables"
-kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$PROXY_ENV' | xargs vault kv put neon-proxy/proxy_env" 1>/dev/null
+kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$PROXY_ENV' | xargs vault kv put ${NAMESPACE}/proxy_env" 1>/dev/null
 echo "Setup indexer env variables"
-kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | xargs vault kv put neon-proxy/indexer_env" 1>/dev/null
+kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | xargs vault kv put ${NAMESPACE}/indexer_env" 1>/dev/null
 
 ## 3. Proxy
 [[ $NEON_PROXY_ENABLED != "true" ]] || {
@@ -381,8 +383,9 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | 
     --set minimal_gas_price=$MINIMAL_GAS_PRICE \
     --set gas_indexer_erc20_wrapper_whitelist=ANY \
     --set gas_start_slot="CONTINUE" \
-    --set ingress.whitelistSourceRange="`echo $PROXY_WHITELIST | sed -r 's/,/\\\,/g'`"
-    #--set ppsolanaUrl=$PP_SOLANA_URL \
+    --set ingress.whitelistSourceRange="`echo $PROXY_WHITELIST | sed -r 's/,/\\\,/g'`" \
+    --set ingress.host=$PROXY_HOST \
+    --timeout 3600s
 
 
 
@@ -411,7 +414,6 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | 
       --set server.persistentVolume.size=$PROMETHEUS_STORAGE_SIZE \
       --set alertmanager.persistence.storageClass=$PROMETHEUS_STORAGE_CLASS \
       --set alertmanager.persistence.size=$PROMETHEUS_STORAGE_SIZE \
-      --set server.ingress.host=$PROXY_HOST \
       --set server.ingress.className=$INGRESS_CLASS \
       --set server.ingress.path=$PROMETHEUS_INGRESS_PATH \
       --set-file extraScrapeConfigs=monitoring/prometheus/extraScrapeConfigs.yaml 1>/dev/null
@@ -435,22 +437,24 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | 
       --set persistence.size=$GRAFANA_STORAGE_SIZE \
       --set adminUser=$GRAFANA_ADMIN_USER \
       --set ingress.enabled=$GRAFANA_INGRESS_ENABLED \
-      --set ingress.host=$PROXY_HOST \
-      --set ingress.className=$INGRESS_CLASS \
+      --set ingress.ingressClassName=$INGRESS_CLASS \
       --set ingress.path=$GRAFANA_INGRESS_PATH \
-      --set adminPassword=$GRAFANA_ADMIN_PASSWD 1>/dev/null
+      --set adminPassword=$GRAFANA_ADMIN_PASSWD \
+      --set ingress.hosts[0]=$GRAFANA_HOST 1>/dev/null
   }
 }
 
+echo "VAULT_TYPE=${VAULT_TYPE}"
+echo "FIRST_RUN=${FIRST_RUN}"
   
 [ $VAULT_TYPE == "dev" ] || [ ! $FIRST_RUN ] || echo -e "\n###################\nWARNING: Please copy and keep $VAULT_KEYS_FILE in safe place!\n###################\n"
     
-    kubectl apply -f tracer/0-proxy-service.yaml
-    kubectl apply -f tracer/0-tracer-db-deployment.yaml
-    kubectl apply -f tracer/0-tracer-db-service.yaml
-    kubectl apply -f tracer/1-neon-tracer-service.yaml
-    kubectl apply -f tracer/2-neon-rpc-deployment.yaml
-    kubectl apply -f tracer/2-neon-rpc-service.yaml
+#    kubectl apply -f tracer/0-proxy-service.yaml
+#    kubectl apply -f tracer/0-tracer-db-deployment.yaml
+#    kubectl apply -f tracer/0-tracer-db-service.yaml
+#    kubectl apply -f tracer/1-neon-tracer-service.yaml
+#    kubectl apply -f tracer/2-neon-rpc-deployment.yaml
+#    kubectl apply -f tracer/2-neon-rpc-service.yaml
 
     ###CREATING CRON TO CHECK VERSION AND UPGRADE/ROLLOUT
     #kubectl apply -f neon-proxy/update/cron.yaml

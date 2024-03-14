@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/name: {{ .Values.ingress.className }}
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
-    nginx.ingress.kubernetes.io/rewrite-target: /solana
+    nginx.ingress.kubernetes.io/rewrite-target: /solana/$1
     nginx.ingress.kubernetes.io/upstream-hash-by: $remote_addr
     {{- if .Values.ingress.whitelistSourceRange }}
     nginx.ingress.kubernetes.io/whitelist-source-range: {{ .Values.ingress.whitelistSourceRange }}
@@ -19,11 +19,18 @@ spec:
     - host: {{ .Values.ingress.host }} 
       http:
         paths:
-          - path: /
-            pathType: Prefix
-            backend:
+          - backend:
               service:
                 name: {{ .Values.service.name }}
-                port: 
+                port:
                   number: {{ .Values.service.port }}
+            path: /(sol|neon)/?$
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: {{ .Values.service.name }}
+                port:
+                  number: {{ .Values.service.port }}
+            path: /()
+            pathType: ImplementationSpecific
 {{- end }}                  

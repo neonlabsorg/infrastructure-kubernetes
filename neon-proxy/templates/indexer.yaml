@@ -61,9 +61,14 @@ spec:
           volumeMounts:
           {{- toYaml .Values.volumeMounts | nindent 10 }}
         {{- end }}  
-          workingDir: /opt              
+          workingDir: /opt
+          {{- if and .Values.indexer.resources.requests.cpu .Values.indexer.resources.requests.memory  }}
+          resources:
+            {{- toYaml .Values.indexer.resources | nindent 12 }}          
+          {{- else if .Values.resources }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          {{- end }}
           command: ["/bin/bash"]
           args: ["proxy/run-indexer.sh"]
       volumes:

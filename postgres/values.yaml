@@ -41,7 +41,7 @@ persistence:
 
 #
 postgresql:
-  maxConnections: 2000
+  maxConnections: 4000
 #
 
 env:

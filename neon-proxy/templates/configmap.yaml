@@ -36,6 +36,7 @@ data:
     export INDEXER_MODE='true'
     source proxy/run-set-env.sh
     python3 -m proxy.indexer
+  {{- if .Values.gasTank.enabled }}
   run-gas-tank.sh: |
     #!/bin/bash
     source /vault/secrets/proxy-env
@@ -52,3 +53,4 @@ data:
     [[ -z "$FINALIZED" ]] && export FINALIZED="confirmed"
 
     python3 -m proxy.gas_tank
+  {{- end }}

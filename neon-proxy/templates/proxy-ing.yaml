@@ -1,4 +1,4 @@
-{{- if .Values.ingress.enabled -}}
+{{- if or (.Values.ingress.enabled) (eq (.Values.ingress.enabled | toString) "") }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -28,4 +28,4 @@ spec:
       {{- if .Values.ingress.host }}
       host: {{ .Values.ingress.host }}
       {{- end }}
-{{- end }}                  
+{{- end }}

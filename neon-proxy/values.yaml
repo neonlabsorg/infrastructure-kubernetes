@@ -40,7 +40,7 @@ podAnnotations: {}
 service:
   name: proxy-svc
   type: ClusterIP
-  sessionAffinity: ClientIP
+  sessionAffinity: None
   clusterIP: None
   port: 9090
   protocol: TCP
@@ -93,6 +93,7 @@ volumeMounts:
 workingDir: "/opt"
 
 indexer:
+  enabled: true
   service:
     name: indexer-svc
     type: ClusterIP

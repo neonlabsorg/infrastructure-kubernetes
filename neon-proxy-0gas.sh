@@ -377,6 +377,7 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | 
     --set resources.requests.memory=$PROXY_MIN_MEM \
     --set resources.limits.cpu=$PROXY_MAX_CPU \
     --set resources.limits.memory=$PROXY_MAX_MEM \
+    --set indexer.enabled=$INDEXER_ENABLED \
     --set indexer.resources.requests.cpu=$INDEXER_MIN_CPU \
     --set indexer.resources.requests.memory=$INDEXER_MIN_MEM \
     --set indexer.resources.limits.cpu=$INDEXER_MAX_CPU \
@@ -387,6 +388,7 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | 
     --set minimal_gas_price=$MINIMAL_GAS_PRICE \
     --set gas_indexer_erc20_wrapper_whitelist=ANY \
     --set gas_start_slot="CONTINUE" \
+    --set ingress.enabled=$PROXY_INGRESS_ENABLED \
     --set ingress.whitelistSourceRange="`echo $PROXY_WHITELIST | sed -r 's/,/\\\,/g'`" \
     --set ingress.host=$PROXY_HOST \
     --timeout 3600s

@@ -422,6 +422,7 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | 
       --set alertmanager.persistence.size=$PROMETHEUS_STORAGE_SIZE \
       --set server.ingress.className=$INGRESS_CLASS \
       --set server.ingress.path=$PROMETHEUS_INGRESS_PATH \
+      --set-file serverFiles.alerting_rules.yml=monitoring/prometheus/alerting_rules.yaml \
       --set-file extraScrapeConfigs=monitoring/prometheus/extraScrapeConfigs.yaml 1>/dev/null
   }
 

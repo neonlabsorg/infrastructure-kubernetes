@@ -2,7 +2,7 @@ proxyCount: 1
 keysPerProxy: 2
 
 onePod:
-  enabled: false
+  enabled: true
 
 ingress:
   enabled: true

@@ -55,14 +55,16 @@ spec:
       {{- if .Values.onePod.enabled }}
       affinity:
         podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchExpressions:
-                - key: "app.kubernetes.io/name"
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/name
                   operator: In
                   values:
                   - neon-proxy
-            topologyKey: "kubernetes.io/hostname"
+              topologyKey: kubernetes.io/hostname
+            weight: 1
       {{- end }}
       terminationGracePeriodSeconds: 120               
       containers:

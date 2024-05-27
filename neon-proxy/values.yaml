@@ -11,7 +11,7 @@ ingress:
   whitelistSourceRange: ""
 
 image:
-  repository: neonlabsorg/proxy
+  repository: neonlabsorg/neon-proxy.py
   pullPolicy: Always
   tag: "v0.11.2"
 
@@ -67,8 +67,10 @@ ENABLE_SEND_TX_API: "YES"
 proxyEnv: {}
 
 solanaUrl: ""
-evm_loader: ""
+solanaWsUrl: ""
+neon_evm_program: ""
 ppsolanaUrl: ""
+minimal_gas_price: ""
 
 volumes: 
   - name: proxy-keys-script
@@ -81,10 +83,10 @@ volumeMounts:
     mountPath: /root/.config/solana/scripts/get_keys.sh
     subPath: get_keys.sh
   - name: proxy-keys-script
-    mountPath: /opt/proxy/run-proxy.sh
+    mountPath: /opt/neon-proxy/proxy/run-proxy.sh
     subPath: run-proxy.sh
   - name: proxy-keys-script
-    mountPath: /opt/proxy/run-indexer.sh
+    mountPath: /opt/neon-proxy/indexer/run-indexer.sh
     subPath: run-indexer.sh
   #- name: proxy-keys-script
   #  mountPath: /opt/run-gas-tank.sh
@@ -99,7 +101,7 @@ indexer:
     type: ClusterIP
     port: 8888
     protocol: TCP
-  indexerKey: ""
+#  indexerKey: ""
   labels: {}
   nodeSelector: {}
   tolerations: []

@@ -241,10 +241,10 @@ NEON_PROXY_ENABLED=$NEON_PROXY_ENABLED
 }
 
 # ## RUN
-[[ $INGRESS_ENABLED != "true" ]] || helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-[[ $VAULT_ENABLED != "true" ]] || helm repo add hashicorp https://helm.releases.hashicorp.com   ## Vault repo
-[[ $PROMETHEUS_ENABLED != "true" ]] || helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-[[ $GRAFANA_ENABLED != "true" && $LOKI_ENABLED != "true" ]] || helm repo add grafana https://grafana.github.io/helm-charts
+# [[ $INGRESS_ENABLED != "true" ]] || helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+# [[ $VAULT_ENABLED != "true" ]] || helm repo add hashicorp https://helm.releases.hashicorp.com   ## Vault repo
+# [[ $PROMETHEUS_ENABLED != "true" ]] || helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+# [[ $GRAFANA_ENABLED != "true" && $LOKI_ENABLED != "true" ]] || helm repo add grafana https://grafana.github.io/helm-charts
 
 helm repo update
 
@@ -292,7 +292,8 @@ helm upgrade --install --atomic postgres postgres/ \
   --set persistence.size=$POSTGRES_STORAGE_SIZE \
   --set migrate.enabled=$DB_MIGRATION \
   --set env[0].name=PGDATA \
-  --set env[0].value=/var/lib/postgresql/data/pgdata 1>/dev/null
+  --set env[0].value=/var/lib/postgresql/data/pgdata 1>/dev/null \
+  --timeout 3600s
 
 [[ $POSTGRES_ENABLED == "false" ]] || kubectl -n ${NAMESPACE} wait --for=condition=ready pod postgres-0 || { 
     echo "ERROR: Postgres installation failed"
@@ -367,8 +368,8 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | 
     --force \
     --history-max 3 \
     --set solanaUrl=$SOLANA_URL \
-    --set evm_loader=$EVM_LOADER \
-    --set commit_level=$COMMIT_LEVEL \
+    --set solanaWsUrl=$SOLANA_WS_URL \
+    --set neon_evm_program=$NEON_EVM_PROGRAM \
     --set perm_account_limit=$PERM_ACCOUNT_LIMIT \
     --set proxyCount=$PROXY_COUNT \
     --set keysPerProxy=$KEYS_PER_PROXY \
@@ -383,7 +384,6 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | 
     --set indexer.resources.limits.cpu=$INDEXER_MAX_CPU \
     --set indexer.resources.limits.memory=$INDEXER_MAX_MEM \
     --set onePod.enabled=$ONE_PROXY_PER_NODE \
-    --set-file indexer.indexerKey=$KEY_DIR/$INDEXER_KEY_FILE \
     --set ENABLE_SEND_TX_API=$PRX_ENABLE_SEND_TX_API \
     --set minimal_gas_price=$MINIMAL_GAS_PRICE \
     --set gas_indexer_erc20_wrapper_whitelist=ANY \
@@ -393,7 +393,8 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | 
     --set ingress.host=$PROXY_HOST \
     --timeout 3600s
 
-
+#     --set commit_level=$COMMIT_LEVEL \
+#    --set-file indexer.indexerKey=$KEY_DIR/$INDEXER_KEY_FILE \
 
     kubectl -n ${NAMESPACE} wait --for=condition=ready pod neon-proxy-0 --timeout=1m || { 
       echo "ERROR: Proxy installation failed"

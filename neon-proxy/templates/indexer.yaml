@@ -49,8 +49,6 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
-          - name: MINIMAL_GAS_PRICE
-            value: "0"
           - name: INDEXER_KEY
             value: {{ .Values.indexer.indexerKey | toString | quote }}
         {{- if .Values.envFrom }}
@@ -61,7 +59,7 @@ spec:
           volumeMounts:
           {{- toYaml .Values.volumeMounts | nindent 10 }}
         {{- end }}  
-          workingDir: /opt
+          workingDir: /opt/neon-proxy
           {{- if and .Values.indexer.resources.requests.cpu .Values.indexer.resources.requests.memory  }}
           resources:
             {{- toYaml .Values.indexer.resources | nindent 12 }}          
@@ -70,7 +68,7 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
           {{- end }}
           command: ["/bin/bash"]
-          args: ["proxy/run-indexer.sh"]
+          args: ["indexer/run-indexer.sh"]
       volumes:
         {{- toYaml .Values.volumes | nindent 8 }}
       {{- with .Values.nodeSelector }}

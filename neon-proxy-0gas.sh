@@ -369,6 +369,7 @@ kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | 
     --history-max 3 \
     --set solanaUrl=$SOLANA_URL \
     --set solanaWsUrl=$SOLANA_WS_URL \
+    --set ppsolanaUrl=$PP_SOLANA_URL \
     --set neon_evm_program=$NEON_EVM_PROGRAM \
     --set perm_account_limit=$PERM_ACCOUNT_LIMIT \
     --set proxyCount=$PROXY_COUNT \

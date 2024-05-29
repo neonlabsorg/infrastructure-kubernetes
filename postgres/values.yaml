@@ -18,7 +18,7 @@ migrate:
 image:
   repository: "postgres"
   pullPolicy: "IfNotPresent"
-  tag: "15.6"
+  tag: "14.0"
 
 service:
   name: dbport

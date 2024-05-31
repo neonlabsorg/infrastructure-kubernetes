@@ -241,10 +241,10 @@ NEON_PROXY_ENABLED=$NEON_PROXY_ENABLED
 }
 
 # ## RUN
-# [[ $INGRESS_ENABLED != "true" ]] || helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-# [[ $VAULT_ENABLED != "true" ]] || helm repo add hashicorp https://helm.releases.hashicorp.com   ## Vault repo
-# [[ $PROMETHEUS_ENABLED != "true" ]] || helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-# [[ $GRAFANA_ENABLED != "true" && $LOKI_ENABLED != "true" ]] || helm repo add grafana https://grafana.github.io/helm-charts
+ [[ $INGRESS_ENABLED != "true" ]] || helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+ [[ $VAULT_ENABLED != "true" ]] || helm repo add hashicorp https://helm.releases.hashicorp.com   ## Vault repo
+ [[ $PROMETHEUS_ENABLED != "true" ]] || helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+ [[ $GRAFANA_ENABLED != "true" && $LOKI_ENABLED != "true" ]] || helm repo add grafana https://grafana.github.io/helm-charts
 
 helm repo update
 

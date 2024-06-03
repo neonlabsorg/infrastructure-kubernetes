@@ -1,0 +1,53 @@
+{{- if .Values.upgrade_14_to_15.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: dbupgade-structure-job
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "postgres.labels" . | nindent 4 }}
+    {{- with .Values.labels }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.annotations }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "5"
+    "helm.sh/hook-delete-policy": hook-succeeded  
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  ttlSecondsAfterFinished: 60
+  template:
+    metadata:
+      name: "{{ .Chart.Name }}"
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: dbmigrations
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        env:
+          - name: POSTGRES_ADMIN_USER 
+            value: {{ .Values.POSTGRES_ADMIN_USER | squote }}
+          - name: POSTGRES_ADMIN_PASSWD
+            value: {{ .Values.POSTGRES_ADMIN_PASSWD | squote}}
+        envFrom:
+          - secretRef: 
+                name: postgres-secret
+        volumeMounts:
+          - name: postgres-config
+            mountPath: /var/lib/postgresql/init_scripts/neon-db.sql
+            subPath: neon-db.sql             
+        command: ['/bin/bash', "-c"]
+        args:
+          - >-
+            sleep 20;
+            export DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}";
+            psql ${DATABASE_URL}/${POSTGRES_DB}?sslmode=${POSTGRES_SSL} -a -f /var/lib/postgresql/init_scripts/neon-db.sql;
+      volumes:
+        - name: postgres-config
+          configMap:
+            name: postgres-config          
+
+{{- end }}

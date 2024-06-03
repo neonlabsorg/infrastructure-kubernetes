@@ -18,7 +18,7 @@ migrate:
 image:
   repository: "postgres"
   pullPolicy: "IfNotPresent"
-  tag: "14.0"
+  tag: "15.6"
 
 service:
   name: dbport
@@ -68,3 +68,7 @@ volumeMounts:
 
 extendedConfiguration: |
         max_connections = 2000
+
+upgrade_14_to_15:
+  enabled: false
+  img_tag: "v1"

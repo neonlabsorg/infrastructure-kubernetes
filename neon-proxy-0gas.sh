@@ -2,6 +2,7 @@
 
 OPERATOR_KEYS=()
 DB_MIGRATION="false"
+DB_UPGRADE="false"
 envs=("devnet","testnet","mainnet")
 vault_types=("dev","standalone","ha")
 VAR_FILE="config.ini"
@@ -34,7 +35,7 @@ HELP="\nUsage: $0 [OPTION]...\n
   "
 
 ## Get options
-while getopts ":f:k:n:p:v:S:s:yhmird" opt; do
+while getopts ":f:k:n:p:v:S:s:yhmirdu" opt; do
   case $opt in
     f) VAR_FILE=${OPTARG} ;;
     k) CLI_KEY_DIR=${OPTARG} ;;
@@ -47,8 +48,9 @@ while getopts ":f:k:n:p:v:S:s:yhmird" opt; do
     m) DB_MIGRATION="true" ;;  
     i) FIRST_RUN="true";DB_MIGRATION="true" ;;
     r) CLI_READONLY="true" ;;    
-    d) DESTROY="true" ;;    
+    d) DESTROY="true" ;;
     h) echo -e $HELP;exit 0 ;;
+    u) DB_UPGRADE="true" ;;
     *) echo "Invalid option -$OPTARG" >&2
     exit 1
     ;;
@@ -215,10 +217,11 @@ echo -e "You can run this script with -h option\n
         Solana URL: $SOLANA_URL
 
  ------------- Modules -------------
-  POSTGRES_ENABLED=$POSTGRES_ENABLED
-     VAULT_ENABLED=$VAULT_ENABLED
-NEON_PROXY_ENABLED=$NEON_PROXY_ENABLED
-   INGRESS_ENABLED=$INGRESS_ENABLED
+    POSTGRES_ENABLED=$POSTGRES_ENABLED
+POSTGRES_UPGRADE_VER=$DB_UPGRADE
+       VAULT_ENABLED=$VAULT_ENABLED
+  NEON_PROXY_ENABLED=$NEON_PROXY_ENABLED
+     INGRESS_ENABLED=$INGRESS_ENABLED
    \n"
 
 
@@ -291,6 +294,7 @@ helm upgrade --install --atomic postgres postgres/ \
   --set persistence.storageClass=$POSTGRES_STORAGE_CLASS \
   --set persistence.size=$POSTGRES_STORAGE_SIZE \
   --set migrate.enabled=$DB_MIGRATION \
+  --set upgrade_14_to_15.enabled=$DB_UPGRADE \
   --set env[0].name=PGDATA \
   --set env[0].value=/var/lib/postgresql/data/pgdata 1>/dev/null \
   --timeout 3600s

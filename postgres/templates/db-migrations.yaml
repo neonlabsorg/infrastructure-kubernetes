@@ -45,7 +45,7 @@ spec:
         command: ['/bin/bash', "-c"]
         args:
           - >-
-            sleep 10;
+            sleep 90;
             export DATABASE_URL="postgresql://${POSTGRES_ADMIN_USER}:${POSTGRES_ADMIN_PASSWD}@${POSTGRES_HOST}:${POSTGRES_PORT}";
             psql ${DATABASE_URL}/postgres?sslmode=${POSTGRES_SSL} -tc "SELECT 1 FROM pg_database WHERE datname = '${POSTGRES_DB}'" | grep -q 1 || psql ${DATABASE_URL}/postgres?sslmode=${POSTGRES_SSL} -c "CREATE DATABASE \"${POSTGRES_DB}\"";
             psql ${DATABASE_URL}/postgres?sslmode=${POSTGRES_SSL} -tc "SELECT 1 FROM pg_database WHERE datname = 'vault'" | grep -q 1 || psql ${DATABASE_URL}/postgres?sslmode=${POSTGRES_SSL} -c "CREATE DATABASE vault";

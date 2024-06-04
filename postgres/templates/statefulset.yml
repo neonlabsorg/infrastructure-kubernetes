@@ -36,6 +36,8 @@ spec:
           image: "neonlabsorg/pg_up_14_to_15:{{ .Values.upgrade_14_to_15.img_tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           workingDir: /var/lib/postgresql/data
+          securityContext:
+            runAsUser: 0
           command: ["/bin/bash", "-c"]
           args:
             - |

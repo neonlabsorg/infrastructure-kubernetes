@@ -3,7 +3,9 @@
 set -e
 
 # Check PostgreSQL version
-PG_VERSION_FILE="/var/lib/postgresql/data/pgdata/PG_VERSION"
+DATA_DIR="/var/lib/postgresql/data/pgdata"
+BACKUP_DATA_DIR="${DATA_DIR}_14_ver_backup"
+PG_VERSION_FILE="$DATA_DIR/PG_VERSION"
 
 
 if [ ! -f "$PG_VERSION_FILE" ]; then
@@ -34,47 +36,47 @@ upgrade_db() {
   echo "===================="
   echo "Creating backup"
   echo "===================="
-  if ! mv /var/lib/postgresql/data/pgdata /var/lib/postgresql/data/pgdata_14_ver_backup; then
-      echo "Backup already exists, possibly from a previous upgrade attempt. You might need to manually remove '/var/lib/postgresql/data/pgdata_14_ver_backup' or proceed with the upgrade manually."
+  if ! mv $DATA_DIR $BACKUP_DATA_DIR; then
+      echo "Backup already exists, possibly from a previous upgrade attempt. You might need to manually remove '${BACKUP_DATA_DIR}'' or proceed with the upgrade manually."
       return 1
   fi
-  mkdir /var/lib/postgresql/data/pgdata || return 1
-  chmod 0750 /var/lib/postgresql/data/pgdata_14_ver_backup || return 1
+  mkdir $DATA_DIR || return 1
+  chmod 0750 $BACKUP_DATA_DIR || return 1
 
   echo "===================="
   echo "Init new DB"
   echo "===================="
-  /usr/lib/postgresql/15/bin/initdb -D /var/lib/postgresql/data/pgdata \
+  /usr/lib/postgresql/15/bin/initdb -D $DATA_DIR \
     --encoding=UTF8 --lc-collate='en_US.utf8' --lc-ctype='en_US.utf8' || return 1
 
   echo "===================="
   echo "Run postgres 14"
   echo "===================="
-  /usr/lib/postgresql/14/bin/pg_ctl start -D /var/lib/postgresql/data/pgdata_14_ver_backup \
+  /usr/lib/postgresql/14/bin/pg_ctl start -D $BACKUP_DATA_DIR \
     -o "-p 50432 -c listen_addresses='' -c unix_socket_permissions=0700 -c unix_socket_directories='/var/lib/postgresql'" || return 1
 
   echo "===================="
   echo "Run postgres 15"
   echo "===================="
-  /usr/lib/postgresql/15/bin/pg_ctl start -D /var/lib/postgresql/data/pgdata \
+  /usr/lib/postgresql/15/bin/pg_ctl start -D $DATA_DIR \
     -o "-p 50433 -c listen_addresses='' -c unix_socket_permissions=0700 -c unix_socket_directories='/var/lib/postgresql'" || return 1
 
   echo "===================="
   echo "Stop postgres 14"
   echo "===================="
-  /usr/lib/postgresql/14/bin/pg_ctl stop -D /var/lib/postgresql/data/pgdata_14_ver_backup || return 1
+  /usr/lib/postgresql/14/bin/pg_ctl stop -D $BACKUP_DATA_DIR || return 1
 
   echo "===================="
   echo "Stop postgres 15"
   echo "===================="
-  /usr/lib/postgresql/15/bin/pg_ctl stop -D /var/lib/postgresql/data/pgdata || return 1
+  /usr/lib/postgresql/15/bin/pg_ctl stop -D $DATA_DIR || return 1
 
   echo "===================="
   echo "Check the possibility of updating"
   echo "===================="
   /usr/lib/postgresql/15/bin/pg_upgrade \
-    --old-datadir=/var/lib/postgresql/data/pgdata_14_ver_backup \
-    --new-datadir=/var/lib/postgresql/data/pgdata \
+    --old-datadir=$BACKUP_DATA_DIR \
+    --new-datadir=$DATA_DIR \
     --old-bindir=/usr/lib/postgresql/14/bin \
     --new-bindir=/usr/lib/postgresql/15/bin \
     --old-port=50432 \
@@ -85,8 +87,8 @@ upgrade_db() {
   echo "Update DB to 15 ver"
   echo "===================="
   /usr/lib/postgresql/15/bin/pg_upgrade \
-    --old-datadir=/var/lib/postgresql/data/pgdata_14_ver_backup \
-    --new-datadir=/var/lib/postgresql/data/pgdata \
+    --old-datadir=$BACKUP_DATA_DIR \
+    --new-datadir=$DATA_DIR \
     --old-bindir=/usr/lib/postgresql/14/bin \
     --new-bindir=/usr/lib/postgresql/15/bin \
     --old-port=50432 \
@@ -99,9 +101,9 @@ revert_db_upgrade() {
   echo "===================="
   echo "Restoring DB from backup"
   echo "===================="
-  rm -rf /var/lib/postgresql/data/pgdata
-  mv /var/lib/postgresql/data/pgdata_14_ver_backup /var/lib/postgresql/data/pgdata || return 1
-  chmod 0750 /var/lib/postgresql/data/pgdata /var/lib/postgresql/data/pgdata || return 1
+  rm -rf $DATA_DIR
+  mv $BACKUP_DATA_DIR $DATA_DIR || return 1
+  chmod 0750 $DATA_DIR || return 1
 
   echo "PostgresDB has been restored to ver "${PG_VERSION}""
 }

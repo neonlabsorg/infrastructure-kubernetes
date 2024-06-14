@@ -42,7 +42,7 @@ spec:
         command: ['/bin/bash', "-c"]
         args:
           - >-
-            sleep 20;
+            sleep 90;
             export DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}";
             psql ${DATABASE_URL}/${POSTGRES_DB}?sslmode=${POSTGRES_SSL} -a -f /var/lib/postgresql/init_scripts/neon-db.sql;
       volumes:

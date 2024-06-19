@@ -294,9 +294,7 @@ helm upgrade --install --atomic postgres postgres/ \
   --set persistence.storageClass=$POSTGRES_STORAGE_CLASS \
   --set persistence.size=$POSTGRES_STORAGE_SIZE \
   --set migrate.enabled=$DB_MIGRATION \
-  --set upgrade_14_to_15.enabled=$DB_UPGRADE \
-  --set env[0].name=PGDATA \
-  --set env[0].value=/var/lib/postgresql/data/pgdata 1>/dev/null \
+  --set upgrade_14_to_15.enabled=$DB_UPGRADE 1>/dev/null \
   --timeout 3600s
 
 [[ $POSTGRES_ENABLED == "false" ]] || kubectl -n ${NAMESPACE} wait --for=condition=ready pod postgres-0 || { 

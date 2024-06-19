@@ -14,6 +14,8 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
+  updateStrategy:
+    type: RollingUpdate
   serviceName: {{ template "postgres.fullname" . }}
   replicas: {{ .Values.replicaCount }}
   selector:
@@ -53,6 +55,9 @@ spec:
       containers:
         - name: {{ .Release.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          args:
+            - -c
+            - max_connections={{ .Values.postgresql.maxConnections }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
           - name: {{ .Values.service.name }}

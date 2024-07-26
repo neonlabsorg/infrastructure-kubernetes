@@ -13,9 +13,7 @@ metadata:
     nginx.ingress.kubernetes.io/enable-cors: "true"
     nginx.ingress.kubernetes.io/cors-allow-origin: "*"
     {{- if .Values.ingress.whitelistSourceRange }}
-    nginx.ingress.kubernetes.io/configuration-snippet: |
-      {{- .Values.ingress.whitelistSourceRange | nindent 6 -}}
-      deny all;
+    nginx.ingress.kubernetes.io/whitelist-source-range: {{ .Values.ingress.whitelistSourceRange }}
     {{- end }}
 spec:
   ingressClassName: {{ .Values.ingress.className }}

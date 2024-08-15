@@ -90,6 +90,7 @@ INDEXER_ENV=$(grep -Po '^IDX_\K.*' $VAR_FILE)
 [ ! $CLI_READONLY ] || PRX_ENABLE_SEND_TX_API="NO"
 [ $VAULT_NAMESPACE ] || VAULT_NAMESPACE=$NAMESPACE
 [ $MONITORING_NAMESPACE ] || MONITORING_NAMESPACE=$NAMESPACE
+[ $VAULT_AUTO_UNSEAL_ENABLED ] || VAULT_AUTO_UNSEAL_ENABLED="false"
 
 [ ! $DESTROY ] || {
   read -p "Uninstall neon-proxy? [yes/no]: " -n 4 -r
@@ -209,19 +210,20 @@ function installVault() {
 
 ## Get ready for start and show values
 echo -e "You can run this script with -h option\n
- ------------- Values -------------
-         Namespase: $NAMESPACE
-    Keys directory: ${KEY_DIR} -- (found ${#OPERATOR_KEYS[@]} keys)
-    Proxy replicas: $PROXY_COUNT
-    Keys per proxy: $KEYS_PER_PROXY
-        Solana URL: $SOLANA_URL
+        ------------- Values -------------
+                Namespase: $NAMESPACE
+            Keys directory: ${KEY_DIR} -- (found ${#OPERATOR_KEYS[@]} keys)
+            Proxy replicas: $PROXY_COUNT
+            Keys per proxy: $KEYS_PER_PROXY
+                Solana URL: $SOLANA_URL
 
- ------------- Modules -------------
-    POSTGRES_ENABLED=$POSTGRES_ENABLED
-POSTGRES_UPGRADE_VER=$DB_UPGRADE
-       VAULT_ENABLED=$VAULT_ENABLED
-  NEON_PROXY_ENABLED=$NEON_PROXY_ENABLED
-     INGRESS_ENABLED=$INGRESS_ENABLED
+        ------------- Modules -------------
+         POSTGRES_ENABLED=$POSTGRES_ENABLED
+     POSTGRES_UPGRADE_VER=$DB_UPGRADE
+            VAULT_ENABLED=$VAULT_ENABLED
+VAULT_AUTO_UNSEAL_ENABLED=$VAULT_AUTO_UNSEAL_ENABLED
+       NEON_PROXY_ENABLED=$NEON_PROXY_ENABLED
+          INGRESS_ENABLED=$INGRESS_ENABLED
    \n"
 
 
@@ -248,6 +250,7 @@ POSTGRES_UPGRADE_VER=$DB_UPGRADE
  [[ $VAULT_ENABLED != "true" ]] || helm repo add hashicorp https://helm.releases.hashicorp.com   ## Vault repo
  [[ $PROMETHEUS_ENABLED != "true" ]] || helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
  [[ $GRAFANA_ENABLED != "true" && $LOKI_ENABLED != "true" ]] || helm repo add grafana https://grafana.github.io/helm-charts
+ [[ $VAULT_AUTO_UNSEAL_ENABLED != "true" && $FIRST_RUN != "true" ]] || helm repo add vault-autounseal https://pytoshka.github.io/vault-autounseal
 
 helm repo update
 
@@ -361,6 +364,61 @@ echo "Setup proxy env variables"
 kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$PROXY_ENV' | xargs vault kv put ${NAMESPACE}/proxy_env" 1>/dev/null
 echo "Setup indexer env variables"
 kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | xargs vault kv put ${NAMESPACE}/indexer_env" 1>/dev/null
+
+
+  ### 2.1 Vault auto unseal
+if [[ $VAULT_AUTO_UNSEAL_ENABLED == "true" && $VAULT_ENABLED == "true" && $VAULT_TYPE != "dev" ]]
+then
+    echo "Installing Vault auto unseal module..."
+    # Read keys and token from file
+    VAULT_UNSEAL_KEY="$(cat $VAULT_KEYS_FILE | jq -r '.unseal_keys_b64[]')"
+    VAULT_ROOT_TOKEN="$(cat $VAULT_KEYS_FILE | jq -r '.root_token')"
+
+    # Vault secrets for tokens
+    VAULT_ROOT_TOKEN_SECRET_NAME=vault-root-token
+    VAULT_KEYS_SECRET_NAME=vault-keys
+    # Try to unseal each SCAN_DELAY seconds
+    SCAN_DELAY=5
+
+
+    # Remove old secrets
+    secrets=("$VAULT_ROOT_TOKEN_SECRET_NAME" "$VAULT_KEYS_SECRET_NAME")
+
+    for secret in "${secrets[@]}"; do
+      if kubectl get secret $secret -n ${VAULT_NAMESPACE} > /dev/null 2>&1; then
+        echo "Warning: Secret $secret already exists in namespace ${VAULT_NAMESPACE}. Deleting the old secret..."
+        kubectl delete secret $secret -n ${VAULT_NAMESPACE}
+      fi
+    done
+
+    # Create vault-root-token secret
+    kubectl create secret generic $VAULT_ROOT_TOKEN_SECRET_NAME \
+    --from-literal=root_token=$(echo -n "$VAULT_ROOT_TOKEN") \
+    -n ${VAULT_NAMESPACE}
+
+    # Create vault-root-token secret
+    readarray -t unseal_keys_array <<< "$VAULT_UNSEAL_KEY"
+
+    keys=""
+
+    for i in "${!unseal_keys_array[@]}"; do
+      key=${unseal_keys_array[$i]}
+      keys="$keys --from-literal=unseal_keys_b64_$((i+1))=$key"
+    done
+
+    kubectl create secret generic $VAULT_KEYS_SECRET_NAME $keys -n ${VAULT_NAMESPACE}
+
+
+    helm upgrade --install --atomic vault-autounseal vault-autounseal/vault-autounseal \
+      --namespace=$VAULT_NAMESPACE \
+      --set=settings.vault_url="http://vault.${VAULT_NAMESPACE}.svc.cluster.local:8200" \
+      --set=settings.vault_secret_shares=${VAULT_KEY_SHARED} \
+      --set=settings.vault_secret_threshold=${VAULT_KEY_THRESHOLD} \
+      --set=settings.vault_root_token_secret=${VAULT_ROOT_TOKEN_SECRET_NAME} \
+      --set=settings.vault_keys_secret=${VAULT_KEYS_SECRET_NAME} \
+      --set=settings.scan_delay=${SCAN_DELAY} >/dev/null
+fi
+
 
 ## 3. Proxy
 [[ $NEON_PROXY_ENABLED != "true" ]] || {

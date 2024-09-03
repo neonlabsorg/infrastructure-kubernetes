@@ -109,14 +109,14 @@ spec:
                 - /bin/sh
                 - -c
                 - >
-                    if curl -s localhost:8888/metrics | grep -q '^tx_in_progress 0'; then
-                      echo "tx_in_progress is ZERO";
+                    if ( curl -s localhost:8888/metrics | grep -q '^tx_process_count 0' ) && ( curl -s localhost:8888/metrics | grep -q '^tx_stuck_count 0' ); then
+                      echo "tx_process_count and tx_stuck_count are ZERO";
                       exit 0;
-                    elif curl -s localhost:8888/metrics | grep -Eq '^tx_in_progress ([1-9][0-9]*|[1-9])$'; then
-                      echo "tx_in_progress is HIGHER THAN ZERO";
+                    elif ( curl -s localhost:8888/metrics | grep -Eq '^tx_process_count ([1-9][0-9]*|[1-9])$' ) || ( curl -s localhost:8888/metrics | grep -Eq '^tx_stuck_count ([1-9][0-9]*|[1-9])$' ); then
+                      echo "tx_process_count or tx_stuck_count is HIGHER THAN ZERO";
                       exit 1;
                     else
-                      echo "tx_in_progress NOT FOUND";
+                      echo "tx_in_progress or tx_stuck_count NOT FOUND";
                       exit 0;
                     fi;  
         {{- end }}

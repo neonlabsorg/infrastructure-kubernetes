@@ -22,12 +22,12 @@ datasources:
     datasources:
     - name: Prometheus
       type: prometheus
-      url: http://prometheus-server.neon-proxy.svc.cluster.local
+      url: http://prometheus-server.{{ .Values.namespace }}.svc.cluster.local
       access: proxy
       isDefault: true
     - name: Loki
       type: loki
-      url: http://loki.neon-proxy.svc.cluster.local:3100
+      url: http://loki.{{ .Values.namespace }}.svc.cluster.local:3100
       access: proxy
       isDefault: false
 

@@ -1,0 +1,86 @@
+repositories:
+  - name: metrics-server
+    url: https://kubernetes-sigs.github.io/metrics-server/
+  - name: grafana
+    url: https://grafana.github.io/helm-charts
+  - name: prometheus-community
+    url: https://prometheus-community.github.io/helm-charts
+
+  
+environments:
+  default:
+    values:
+    - ./values.yaml
+    - namespace:
+        monitoring: 'neon-proxy'
+
+---
+releases:
+  - name: metrics-server
+    chart: metrics-server/metrics-server
+    namespace: kube-system
+    atomic: true 
+    installed: {{ .Values.metrics_server.installed }}
+    set:
+      - name: args[0]
+        value: --kubelet-insecure-tls
+
+  - name: kube-state-metrics
+    chart: prometheus-community/kube-state-metrics
+    namespace: {{ .Values.namespace.monitoring }}
+    atomic: true 
+    version: 5.15.3
+    installed: {{ .Values.prometheus.installed }}
+
+  - name: prometheus
+    chart: prometheus-community/prometheus
+    namespace: {{ .Values.namespace.monitoring }}
+    atomic: true 
+    version: 25.8.2
+    installed: {{ .Values.prometheus.installed }}
+    values:
+      - ../monitoring/prometheus/values.yaml
+    set:
+      - name: extraScrapeConfigs
+        file: '../monitoring/prometheus/extraScrapeConfigs.yaml'
+{{- range $key, $value := .Values.prometheus }}
+      - name: {{ $key }}
+        value: {{ $value }}
+{{- end }}
+
+  - name: loki
+    chart: grafana/loki
+    namespace: {{ .Values.namespace.monitoring }}
+    atomic: true 
+    version: 5.41.6
+    installed: {{ .Values.loki.installed }}
+    values:
+      - ../monitoring/loki/values.yaml
+    set:
+{{- range $key, $value := .Values.loki }}
+      - name: {{ $key }}
+        value: {{ $value }}
+{{- end }}
+
+  - name: promtail
+    chart: grafana/promtail
+    namespace: {{ .Values.namespace.monitoring }}
+    atomic: true 
+    version: 6.15.3
+    installed: {{ .Values.promtail.installed }}
+
+  - name: grafana
+    chart: grafana/grafana
+    namespace: {{ .Values.namespace.monitoring }}
+    atomic: true 
+    version: 7.1.0
+    installed: {{ .Values.grafana.installed }}
+    values:
+      - ../monitoring/grafana/values.yaml
+    set:
+      - name: namespace
+        value: {{ .Values.namespace.monitoring }}
+{{- range $key, $value := .Values.grafana }}
+      - name: {{ $key }}
+        value: {{ $value }}
+{{- end }}

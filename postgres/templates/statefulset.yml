@@ -14,6 +14,8 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
+  updateStrategy:
+    type: RollingUpdate
   serviceName: {{ template "postgres.fullname" . }}
   replicas: {{ .Values.replicaCount }}
   selector:
@@ -30,9 +32,32 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
+    {{- if .Values.upgrade_14_to_15.enabled }}
+      initContainers:
+        - name: upgrade-postgres
+          image: "neonlabsorg/pg_up_14_to_15:{{ .Values.upgrade_14_to_15.img_tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          workingDir: /var/lib/postgresql/data
+          securityContext:
+            runAsUser: 0
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              su postgres -c "/bin/bash /var/lib/postgresql/init_scripts/upgrade_postgres_db_14_to_15.sh"
+          {{- if .Values.volumeMounts }}
+          volumeMounts:
+          {{- toYaml .Values.volumeMounts | nindent 10 }}
+          - name: postgres-config
+            mountPath: /var/lib/postgresql/init_scripts/upgrade_postgres_db_14_to_15.sh
+            subPath: upgrade_postgres_db_14_to_15.sh
+          {{- end }}
+    {{- end }}
       containers:
         - name: {{ .Release.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          args:
+            - -c
+            - max_connections={{ .Values.postgresql.maxConnections }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
           - name: {{ .Values.service.name }}
@@ -53,10 +78,12 @@ spec:
           env:
           {{- toYaml .Values.env | nindent 10 }}
         {{- end }}
-        {{- if .Values.volumeMounts }}
           volumeMounts:
+        {{- if .Values.volumeMounts }}
           {{- toYaml .Values.volumeMounts | nindent 10 }}
         {{- end }}
+          - mountPath: /dev/shm
+            name: dshm
         {{- with .Values.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
@@ -64,7 +91,11 @@ spec:
       volumes:
         - name: postgres-config
           configMap:
-            name: postgres-config        
+            name: postgres-config
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 256Mi
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

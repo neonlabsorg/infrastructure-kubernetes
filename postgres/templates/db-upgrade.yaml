@@ -1,8 +1,8 @@
-{{- if .Values.migrate.enabled -}}
+{{- if .Values.upgrade_14_to_15.enabled }}
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: dbcreate-job
+  name: dbupgade-structure-job
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "postgres.labels" . | nindent 4 }}
@@ -38,23 +38,13 @@ spec:
         volumeMounts:
           - name: postgres-config
             mountPath: /var/lib/postgresql/init_scripts/neon-db.sql
-            subPath: neon-db.sql
-          - name: postgres-config
-            mountPath: /var/lib/postgresql/init_scripts/vault.sql
-            subPath: vault.sql                
+            subPath: neon-db.sql             
         command: ['/bin/bash', "-c"]
         args:
           - >-
             sleep 90;
-            export DATABASE_URL="postgresql://${POSTGRES_ADMIN_USER}:${POSTGRES_ADMIN_PASSWD}@${POSTGRES_HOST}:${POSTGRES_PORT}";
-            psql ${DATABASE_URL}/postgres?sslmode=${POSTGRES_SSL} -tc "SELECT 1 FROM pg_database WHERE datname = '${POSTGRES_DB}'" | grep -q 1 || psql ${DATABASE_URL}/postgres?sslmode=${POSTGRES_SSL} -c "CREATE DATABASE \"${POSTGRES_DB}\"";
-            psql ${DATABASE_URL}/postgres?sslmode=${POSTGRES_SSL} -tc "SELECT 1 FROM pg_database WHERE datname = 'vault'" | grep -q 1 || psql ${DATABASE_URL}/postgres?sslmode=${POSTGRES_SSL} -c "CREATE DATABASE vault";
-            psql ${DATABASE_URL}/postgres?sslmode=${POSTGRES_SSL} -tc "create user \"${POSTGRES_USER}\" with encrypted password '${POSTGRES_PASSWORD}';"
-            psql ${DATABASE_URL}/postgres?sslmode=${POSTGRES_SSL} -tc "grant all privileges on database \"${POSTGRES_DB}\" to \"${POSTGRES_USER}\";"
-            psql ${DATABASE_URL}/postgres?sslmode=${POSTGRES_SSL} -tc "grant all privileges on database vault to \"${POSTGRES_USER}\";"
             export DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}";
             psql ${DATABASE_URL}/${POSTGRES_DB}?sslmode=${POSTGRES_SSL} -a -f /var/lib/postgresql/init_scripts/neon-db.sql;
-            psql ${DATABASE_URL}/vault?sslmode=${POSTGRES_SSL} -a -f /var/lib/postgresql/init_scripts/vault.sql;
       volumes:
         - name: postgres-config
           configMap:

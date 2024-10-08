@@ -1,29 +1,33 @@
-{{- if .Values.ingress.enabled -}}
+{{- if or (.Values.ingress.enabled) (eq (.Values.ingress.enabled | toString) "") }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   namespace: {{ .Release.Namespace }}
-  name: {{ .Release.Namespace }}-ing
+  name: {{ .Release.Namespace }}-ing3
   annotations:
-    app.kubernetes.io/name: {{ .Values.ingress.className }} 
-    #kubernetes.io/ingress.class: {{ .Values.ingress.className }}
+    app.kubernetes.io/name: {{ .Values.ingress.className }}
     alb.ingress.kubernetes.io/scheme: internet-facing
-    alb.ingress.kubernetes.io/target-type: ip    
+    alb.ingress.kubernetes.io/target-type: ip
     nginx.ingress.kubernetes.io/rewrite-target: /solana
-    nginx.ingress.kubernetes.io/affinity-mode: "persistent"
-    nginx.ingress.kubernetes.io/affinity-canary-behavior: "sticky" 
-    use-proxy-protocol: "true"  
+    nginx.ingress.kubernetes.io/upstream-hash-by: $remote_addr
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    {{- if .Values.ingress.whitelistSourceRange }}
+    nginx.ingress.kubernetes.io/whitelist-source-range: {{ .Values.ingress.whitelistSourceRange }}
+    {{- end }}
 spec:
   ingressClassName: {{ .Values.ingress.className }}
   rules:
-    - host: {{ .Values.ingress.host }} 
-      http:
+    - http:
         paths:
-          - path: /
-            pathType: Prefix
-            backend:
+          - backend:
               service:
                 name: {{ .Values.service.name }}
-                port: 
+                port:
                   number: {{ .Values.service.port }}
-{{- end }}                  
+            path: /
+            pathType: Prefix
+      {{- if .Values.ingress.host }}
+      host: {{ .Values.ingress.host }}
+      {{- end }}
+{{- end }}

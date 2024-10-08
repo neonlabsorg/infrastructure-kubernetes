@@ -1,7 +1,10 @@
 #/bin/sh
 vault auth enable kubernetes
 vault write auth/kubernetes/config \
-    kubernetes_host=https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT
+    kubernetes_host="https://kubernetes.default.svc:443" \
+    token_reviewer_jwt="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
+    kubernetes_ca_cert=@/var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
+    issuer="https://kubernetes.default.svc.cluster.local" 
 vault secrets enable -path=$NAMESPACE kv-v2
 # Add policy
 vault policy write ${NAMESPACE} - <<EOF

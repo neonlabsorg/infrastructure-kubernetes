@@ -15,5 +15,9 @@ capabilities = ["read"]
 
 path "${NAMESPACE}/data/indexer_env" {
 capabilities = ["read"]
+}
+
+path "${NAMESPACE}/data/core_api_env" {
+capabilities = ["read"]
 } 
 EOF

@@ -88,6 +88,9 @@ volumeMounts:
   - name: proxy-keys-script
     mountPath: /opt/neon-proxy/indexer/run-indexer.sh
     subPath: run-indexer.sh
+  - name: proxy-keys-script
+    mountPath: /opt/neon-proxy/core-api/run-core-api.sh
+    subPath: run-core-api.sh
   #- name: proxy-keys-script
   #  mountPath: /opt/run-gas-tank.sh
   #  subPath: run-gas-tank.sh
@@ -107,6 +110,20 @@ indexer:
   tolerations: []
   affinity: {}
   podAnnotations: {}
- 
+
+coreapi:
+  enabled: false
+  replicas: 2
+  service:
+    name: core-api-svc
+    type: ClusterIP
+    port: 9500
+    protocol: TCP
+  labels: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  podAnnotations: {}
+
 gasTank:
   enabled: false

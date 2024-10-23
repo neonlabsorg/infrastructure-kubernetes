@@ -54,3 +54,26 @@ spec:
     application-pod: neon-proxy-indexer  
     {{- include "neon-proxy.selectorLabels" . | nindent 4 }}
 
+{{- if .Values.coreapi.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: {{ .Values.namespace }}
+  name: {{ .Values.coreapi.service.name }}
+  labels:
+    application-pod: neon-core-api
+    {{- include "neon-proxy.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.coreapi.service.type }}
+  sessionAffinity: {{ .Values.coreapi.service.sessionAffinity }}
+  clusterIP: {{ .Values.coreapi.service.clusterIP }}
+  ports:
+    - port: {{ .Values.coreapi.service.port }}
+      targetPort: {{ .Values.coreapi.service.port }}
+      protocol: {{ .Values.coreapi.service.protocol }}
+      name: {{ .Values.coreapi.service.name }}
+  selector:
+    application-pod: neon-core-api  
+    {{- include "neon-proxy.selectorLabels" . | nindent 4 }}
+{{- end }}

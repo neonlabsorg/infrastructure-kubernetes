@@ -1,0 +1,95 @@
+{{- if .Values.coreapi.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: core-api
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "neon-proxy.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.coreapi.replicas }}
+  selector:
+    matchLabels:
+      application-pod: neon-core-api
+      {{- include "neon-proxy.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        kubernetes.io/psp: restricted
+        checksum/secret: {{ include (print $.Template.BasePath "/proxy-config.yaml") . | sha256sum }}  
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/agent-inject-status: "update"
+        vault.hashicorp.com/role: {{ .Release.Namespace }}
+        vault.hashicorp.com/agent-inject-secret-proxy-env: {{ .Release.Namespace }}/data/proxy_env
+        vault.hashicorp.com/agent-inject-template-proxy-env: |
+          {{`{{- with secret "`}}{{.Release.Namespace }}{{`/data/proxy_env" -}}
+            {{ range $k, $v := .Data.data }}
+            export  {{ $k }}={{ $v }}
+            {{ end }}
+          {{- end }}`}} 
+        vault.hashicorp.com/agent-inject-secret-core-api-env: {{ .Release.Namespace }}/data/core_api_env
+        vault.hashicorp.com/agent-inject-template-core-api-env: |
+          {{`{{- with secret "`}}{{.Release.Namespace }}{{`/data/core_api_env" -}}
+            {{ range $k, $v := .Data.data }}
+            export  {{ $k }}={{ $v }}
+            {{ end }}
+          {{- end }}`}}
+      labels:
+        application-pod: neon-core-api
+        {{- include "neon-proxy.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: neon-core-api
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: NEON_API_LISTENER_ADDR
+              value: "0.0.0.0:9500"
+            - name: RUST_BACKTRACE
+              value: "1"
+            - name: RUST_LOG
+              value: debug
+            - name: COMMITMENT
+              value: recent
+            - name: SOLANA_TEST_ACCOUNTS_INDEX_MEMORY_LIMIT_MB
+              value: "value"
+            - name: SOLANA_RAYON_THREADS
+              value: "1"
+          envFrom:
+          - secretRef: 
+              name: core-api-config
+        {{- if .Values.volumeMounts }}
+          volumeMounts:
+          {{- toYaml .Values.volumeMounts | nindent 10 }}
+        {{- end }}
+          {{- if .Values.coreapi.resources }}
+          resources:
+            {{- toYaml .Values.coreapi.resources | nindent 12 }}          
+          {{- else if .Values.resources }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- end }}
+          command: ["/bin/bash", "-c"]
+          args: ["core-api/run-core-api.sh"]
+      volumes:
+        {{- toYaml .Values.volumes | nindent 8 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

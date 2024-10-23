@@ -78,7 +78,7 @@ done
 source $VAR_FILE
 PROXY_ENV=$(grep -Po '^PRX_\K.*' $VAR_FILE)
 INDEXER_ENV=$(grep -Po '^IDX_\K.*' $VAR_FILE)
-
+CORE_API_ENV=$(grep -Po '^COR_\K.*' $VAR_FILE)
 
 # Set values from a command line
 [ ! $CLI_NAMESPACE ] || NAMESPACE=$CLI_NAMESPACE
@@ -107,12 +107,6 @@ INDEXER_ENV=$(grep -Po '^IDX_\K.*' $VAR_FILE)
 ## Check variables
 [ $FIRST_RUN ] || kubectl get ns $NAMESPACE > /dev/null || {
   echo "Please run with -i opton"
-  echo -e $HELP
-  exit 1
-}
-
-[ ! -z "$SOLANA_URL" ] || {
-  echo "ERROR: SOLANA_URL cannot be empty! Use -S key to set SOLANA url"
   echo -e $HELP
   exit 1
 }
@@ -444,6 +438,12 @@ fi
     --set indexer.resources.requests.memory=$INDEXER_MIN_MEM \
     --set indexer.resources.limits.cpu=$INDEXER_MAX_CPU \
     --set indexer.resources.limits.memory=$INDEXER_MAX_MEM \
+    --set coreapi.enabled=$CORE_API_ENABLED \
+    --set coreapi.resources.requests.cpu=$CORE_API_MIN_CPU \
+    --set coreapi.resources.requests.memory=$CORE_API_MIN_MEM \
+    --set coreapi.resources.limits.cpu=$CORE_API_MAX_CPU \
+    --set coreapi.resources.limits.memory=$CORE_API_MAX_MEM \
+    --set coreapi.replicas=$CORE_API_REPLICAS \
     --set onePod.enabled=$ONE_PROXY_PER_NODE \
     --set ENABLE_SEND_TX_API=$PRX_ENABLE_SEND_TX_API \
     --set minimal_gas_price=$MINIMAL_GAS_PRICE \

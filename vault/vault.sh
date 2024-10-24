@@ -1,8 +1,8 @@
 #/bin/sh
 vault auth enable kubernetes
 vault write auth/kubernetes/config \
-    kubernetes_host=https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT
-vault secrets enable -path=$NAMESPACE kv-v2
+    kubernetes_host=https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT 1>/dev/null
+vault secrets enable -path=$NAMESPACE kv-v2 1>/dev/null
 # Add policy
 vault policy write ${NAMESPACE} - <<EOF
 path "${NAMESPACE}/data/proxy" {

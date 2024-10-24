@@ -12,3 +12,7 @@ data:
   MINIMAL_GAS_PRICE: {{ .Values.minimal_gas_price | toString | b64enc | quote }}
   PROXY_COUNT: {{ .Values.proxyCount | toString | b64enc | quote }}
   KEYS_PER_PROXY: {{ .Values.keysPerProxy | toString | b64enc | quote }}
+  {{- if .Values.coreapi.enabled }}
+  CORE_API_IP: {{ .Values.coreapi.addr | b64enc | quote }}
+  CORE_API_PORT: {{ .Values.coreapi.port | b64enc | quote }}
+  {{- end }}

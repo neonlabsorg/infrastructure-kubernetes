@@ -7,7 +7,9 @@ metadata:
   labels:
     {{- include "neon-proxy.labels" . | nindent 4 }}
 spec:
+  {{- if not .Values.coreapi.hpa.enabled }}
   replicas: {{ .Values.coreapi.replicas }}
+  {{- end }}
   selector:
     matchLabels:
       application-pod: neon-core-api

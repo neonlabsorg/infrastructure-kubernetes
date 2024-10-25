@@ -335,8 +335,8 @@ kubectl -n ${VAULT_NAMESPACE} wait --for=condition=ready pod vault-0 || {
 kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROOT_TOKEN" 1>/dev/null
 
 echo "Setup vault"
-kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "export NAMESPACE=$NAMESPACE && `cat vault/vault.sh`" 1>/dev/null
-kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault write auth/kubernetes/role/${NAMESPACE} bound_service_account_names=neon-proxy-sa bound_service_account_namespaces=${NAMESPACE} policies=${NAMESPACE} ttl=24h" 1>/dev/null
+kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "export NAMESPACE=$NAMESPACE && `cat vault/vault.sh`" 2>/dev/null
+kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault write auth/kubernetes/role/${NAMESPACE} bound_service_account_names=neon-proxy-sa bound_service_account_namespaces=${NAMESPACE} policies=${NAMESPACE} ttl=24h" 2>/dev/null
 
 if [[ $PRX_ENABLE_SEND_TX_API == "YES" ]]
 then

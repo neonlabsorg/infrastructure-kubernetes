@@ -10,6 +10,11 @@ spec:
   {{- if not .Values.coreapi.hpa.enabled }}
   replicas: {{ .Values.coreapi.replicas }}
   {{- end }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
   selector:
     matchLabels:
       application-pod: neon-core-api

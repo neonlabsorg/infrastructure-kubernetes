@@ -132,6 +132,7 @@ coreapi:
   hpa:
     enabled: false
     targetCPUUtilizationPercentage: 60
+  logVerbosity: "warn" # One of: off | error | warn | info | debug
 
 
 gasTank:

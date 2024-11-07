@@ -390,7 +390,11 @@ then
     -n ${VAULT_NAMESPACE}
 
     # Create vault-root-token secret
-    readarray -t unseal_keys_array <<< "$VAULT_UNSEAL_KEY"
+    # readarray -t unseal_keys_array <<< "$VAULT_UNSEAL_KEY"
+    unseal_keys_array=()
+    while IFS= read -r line; do
+      unseal_keys_array+=("$line")
+    done <<< "$VAULT_UNSEAL_KEY"
 
     keys=""
 

@@ -30,6 +30,8 @@ datasources:
       url: http://loki.neon-proxy.svc.cluster.local:3100
       access: proxy
       isDefault: false
+      jsonData:
+        maxLines: 10000
 
 
 dashboards:

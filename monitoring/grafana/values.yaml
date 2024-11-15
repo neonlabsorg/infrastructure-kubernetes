@@ -36,12 +36,8 @@ datasources:
       access: proxy
       isDefault: false
       jsonData:
-<<<<<<< HEAD
-        maxLines: 10000
-=======
         timeout: 600
         maxLines: 0
->>>>>>> 4be5eda (Increase grafana logs query timeout)
 
 
 dashboards:

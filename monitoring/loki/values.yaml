@@ -20,6 +20,14 @@ loki:
   datasource:
     jsonData: "{}"
     uid: ""
+  limits_config:
+    split_queries_by_interval: 1h
+  server:
+    http_server_read_timeout: 600s
+    http_server_write_timeout: 600s
+    grpc_server_max_recv_msg_size: 104857600
+    grpc_server_max_send_msg_size: 104857600
+
 
 
 promtail:

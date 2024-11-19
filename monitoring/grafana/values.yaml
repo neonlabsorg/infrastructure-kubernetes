@@ -7,6 +7,7 @@ grafana.ini:
   dataproxy:
     logging: true
     timeout: 600s
+    keep_alive_seconds: 600s
 
 dashboardProviders: 
   dashboardproviders.yaml:
@@ -36,12 +37,8 @@ datasources:
       access: proxy
       isDefault: false
       jsonData:
-<<<<<<< HEAD
-        maxLines: 10000
-=======
         timeout: 600
         maxLines: 0
->>>>>>> 4be5eda (Increase grafana logs query timeout)
 
 
 dashboards:

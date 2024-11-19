@@ -7,6 +7,7 @@ grafana.ini:
   dataproxy:
     logging: true
     timeout: 600s
+    keep_alive_seconds: 600s
 
 dashboardProviders: 
   dashboardproviders.yaml:

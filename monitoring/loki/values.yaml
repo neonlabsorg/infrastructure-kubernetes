@@ -4,6 +4,8 @@ test_pod:
   pullPolicy: IfNotPresent
 
 loki:
+  image:
+    tag: 2.9.10
   enabled: true
   isDefault: true
   url: http://{{(include "loki.serviceName" .)}}:{{ .Values.loki.service.port }}
@@ -20,15 +22,30 @@ loki:
   datasource:
     jsonData: "{}"
     uid: ""
-  limits_config:
-    split_queries_by_interval: 1h
-  server:
-    http_server_read_timeout: 600s
-    http_server_write_timeout: 600s
-    grpc_server_max_recv_msg_size: 104857600
-    grpc_server_max_send_msg_size: 104857600
-
-
+  config:
+    server:
+      http_server_read_timeout: 600s
+      http_server_write_timeout: 600s
+      grpc_server_max_recv_msg_size: 304857600
+      grpc_server_max_send_msg_size: 304857600
+    chunk_store_config:
+      max_look_back_period: 0s
+    table_manager:
+      retention_deletes_enabled: true
+      retention_period: 12h
+    limits_config:
+      split_queries_by_interval: 1h
+      max_entries_limit_per_query: 900000000
+    query_range:
+      max_retries: 5
+      cache_results: true
+      parallelise_shardable_queries: true
+      results_cache:
+        cache:
+          enable_fifocache: true
+          fifocache:
+            max_size_items: 2048000000
+            validity: 48h
 
 promtail:
   enabled: true

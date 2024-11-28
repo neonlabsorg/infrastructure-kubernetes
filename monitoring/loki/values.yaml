@@ -5,7 +5,7 @@ test_pod:
 
 loki:
   image:
-    tag: 2.9.10
+    tag: 3.3.0
   enabled: true
   isDefault: true
   url: http://{{(include "loki.serviceName" .)}}:{{ .Values.loki.service.port }}
@@ -33,6 +33,8 @@ loki:
 
 promtail:
   enabled: true
+  image:
+    tag: 3.3.0
   config:
     snippets:
       pipelineStages:

@@ -494,10 +494,13 @@ fi
   }
 
   [[ $LOKI_ENABLED != "true" ]] || {
+    kubectl -n $MONITORING_NAMESPACE apply -f monitoring/loki/loki-secret-config.yaml
     echo "Installing Loki..."
     helm upgrade --install loki grafana/loki-stack \
       -f monitoring/loki/values.yaml \
       --namespace=$MONITORING_NAMESPACE \
+      --set loki.persistence.storageClassName=$LOKI_STORAGE_CLASS \
+      --set loki.persistence.size=$LOKI_STORAGE_SIZE \
       --history-max 3 1>/dev/null
   }
 

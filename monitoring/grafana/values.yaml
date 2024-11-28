@@ -38,7 +38,7 @@ datasources:
       isDefault: false
       jsonData:
         timeout: 600
-        maxLines: 900000000
+        maxLines: 0
 
 
 dashboards:

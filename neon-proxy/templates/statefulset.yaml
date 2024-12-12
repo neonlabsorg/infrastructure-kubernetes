@@ -72,6 +72,10 @@ spec:
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          command:
+            - /bin/sh
+            - '-c'
+            - rm /root/.config/solana/id.json && proxy/run-proxy.sh
           imagePullPolicy: {{ .Values.image.pullPolicy }}
         {{- if .Values.envFrom }}        
           envFrom:

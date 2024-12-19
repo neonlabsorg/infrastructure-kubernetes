@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/name: {{ .Values.ingress.className }}
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
-    nginx.ingress.kubernetes.io/rewrite-target: /solana
+    nginx.ingress.kubernetes.io/rewrite-target: /solana/$1
     nginx.ingress.kubernetes.io/upstream-hash-by: $remote_addr
     nginx.ingress.kubernetes.io/enable-cors: "true"
     nginx.ingress.kubernetes.io/cors-allow-origin: "*"
@@ -25,8 +25,15 @@ spec:
                 name: {{ .Values.service.name }}
                 port:
                   number: {{ .Values.service.port }}
+            path: /(sol|neon|usdc|usdt)/?$
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: {{ .Values.service.name }}
+                port:
+                  number: {{ .Values.service.port }}
             path: /
-            pathType: Prefix
+            pathType: ImplementationSpecific
       {{- if .Values.ingress.host }}
       host: {{ .Values.ingress.host }}
       {{- end }}

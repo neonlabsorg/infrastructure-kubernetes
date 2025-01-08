@@ -106,6 +106,15 @@ spec:
               cpu: {{ .Values.resources.limits.cpu }}
               memory: {{ .Values.resources.limits.memory }}
         {{- end }}
+          livenessProbe:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - >
+                curl -X POST -H 'Content-Type: application/json' -d '{"jsonrpc":"2.0","method":"eth_gasPrice","params":[],"id":1}' http://localhost:9090 | grep ^\{\"jsonrpc\"\:\"2\.0\"\,\"id\"\:1\,\"result\"\:\".*\"\}$
+            initialDelaySeconds: 60
+            periodSeconds: 15
         {{- if eq .Values.ENABLE_SEND_TX_API "YES" }}
           lifecycle:
             postStart:

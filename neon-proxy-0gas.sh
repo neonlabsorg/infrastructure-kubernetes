@@ -332,11 +332,20 @@ kubectl -n ${VAULT_NAMESPACE} wait --for=condition=ready pod vault-0 || {
     exit 1   
 }
 
-kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROOT_TOKEN" 1>/dev/null
+until kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROOT_TOKEN" 1>/dev/null
+do 
+  echo "Try again"
+done
 
 echo "Setup vault"
-kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "export NAMESPACE=$NAMESPACE && `cat vault/vault.sh`" 2>/dev/null
-kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault write auth/kubernetes/role/${NAMESPACE} bound_service_account_names=neon-proxy-sa bound_service_account_namespaces=${NAMESPACE} policies=${NAMESPACE} ttl=24h" 2>/dev/null
+until kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "export NAMESPACE=$NAMESPACE && `cat vault/vault.sh`" 2>/dev/null
+do 
+  echo "Try again"
+done
+until kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault write auth/kubernetes/role/${NAMESPACE} bound_service_account_names=neon-proxy-sa bound_service_account_namespaces=${NAMESPACE} policies=${NAMESPACE} ttl=24h" 2>/dev/null
+do 
+  echo "Try again"
+done
 
 if [[ $PRX_ENABLE_SEND_TX_API == "YES" ]]
 then
@@ -347,17 +356,29 @@ then
     echo "Add keys for neon-proxy-${id}"
     part=( "${OPERATOR_KEYS[@]:i:KEYS_PER_PROXY}" )
     [ $id != 0 ] || kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault kv put ${NAMESPACE}/proxy neon-proxy-${id}=\"${part[*]}\"" 1>/dev/null
-    kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault kv patch ${NAMESPACE}/proxy neon-proxy-${id}=\"${part[*]}\"" 1>/dev/null
+    until kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault kv patch ${NAMESPACE}/proxy neon-proxy-${id}=\"${part[*]}\"" 1>/dev/null
+    do 
+      echo "Try again"
+    done
     id=$((id+1))
   done
 fi
 
 echo "Setup proxy env variables"
-kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$PROXY_ENV' | xargs vault kv put ${NAMESPACE}/proxy_env" 1>/dev/null
+until kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$PROXY_ENV' | xargs vault kv put ${NAMESPACE}/proxy_env" 1>/dev/null
+do 
+  echo "Try again"
+done
 echo "Setup indexer env variables"
-kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | xargs vault kv put ${NAMESPACE}/indexer_env" 1>/dev/null
+until kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | xargs vault kv put ${NAMESPACE}/indexer_env" 1>/dev/null
+do 
+  echo "Try again"
+done
 echo "Setup core-api env variables"
-kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$CORE_API_ENV' | xargs vault kv put ${NAMESPACE}/core_api_env" 1>/dev/null
+until kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$CORE_API_ENV' | xargs vault kv put ${NAMESPACE}/core_api_env" 1>/dev/null
+do 
+  echo "Try again"
+done
 
   ### 2.1 Vault auto unseal
 if [[ $VAULT_AUTO_UNSEAL_ENABLED == "true" && $VAULT_ENABLED == "true" && $VAULT_TYPE != "dev" ]]

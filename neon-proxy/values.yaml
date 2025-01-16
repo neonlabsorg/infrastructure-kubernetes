@@ -95,6 +95,11 @@ volumeMounts:
   #  mountPath: /opt/run-gas-tank.sh
   #  subPath: run-gas-tank.sh
 
+livenessProbe:
+  enabled: true
+readinessProbe:
+  enabled: true
+
 workingDir: "/opt"
 
 indexer:

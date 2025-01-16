@@ -116,6 +116,7 @@ spec:
                 curl -X POST -H 'Content-Type: application/json' -d '{"jsonrpc":"2.0","method":"eth_gasPrice","params":[],"id":1}' http://localhost:9090 | python3 -c "import sys, json; respond=json.load(sys.stdin); sys.exit(1) if 'error' in respond.keys() else sys.exit(0);"
             initialDelaySeconds: 60
             periodSeconds: 15
+            timeoutSeconds: 5
         {{- end }}
         {{- if .Values.readinessProbe.enabled }}
           readinessProbe:
@@ -127,6 +128,7 @@ spec:
                 curl -X POST -H 'Content-Type: application/json' -d '{"jsonrpc":"2.0","method":"eth_gasPrice","params":[],"id":1}' http://localhost:9090 | python3 -c "import sys, json; respond=json.load(sys.stdin); sys.exit(1) if 'error' in respond.keys() else sys.exit(0);"
             initialDelaySeconds: 5
             periodSeconds: 5
+            timeoutSeconds: 5
         {{- end }}
         {{- if eq .Values.ENABLE_SEND_TX_API "YES" }}
           lifecycle:

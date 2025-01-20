@@ -137,6 +137,16 @@ PROMETHEUS_STORAGE_SIZE="10Gi"
 PROMETHEUS_INGRESS_ENABLED="true"
 PROMETHEUS_INGRESS_PATH="/prometheus"
 
+
+################
+## LOKI
+################
+
+#IF LOKI_ENABLED=true you can set up LOKI_REMOTE_URL which will disable local loki and promtail will send data to LOKI_REMOTE_URL
+LOKI_STORAGE_CLASS="gp2"
+LOKI_STORAGE_SIZE="10Gi"
+LOKI_REMOTE_URL='https://remote-loki-url/loki/api/v1/push'
+
 ################
 ## Grafana
 ################

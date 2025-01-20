@@ -515,14 +515,26 @@ fi
   }
 
   [[ $LOKI_ENABLED != "true" ]] || {
-    kubectl -n $MONITORING_NAMESPACE apply -f monitoring/loki/loki-secret-config.yaml
-    echo "Installing Loki..."
-    helm upgrade --install loki grafana/loki-stack \
+    
+    if [[ -z $LOKI_REMOTE_URL ]]; then
+      echo "Installing local Loki..."
+      kubectl -n $MONITORING_NAMESPACE apply -f monitoring/loki/loki-secret-config.yaml
+      helm upgrade --install loki grafana/loki-stack \
       -f monitoring/loki/values.yaml \
       --namespace=$MONITORING_NAMESPACE \
       --set loki.persistence.storageClassName=$LOKI_STORAGE_CLASS \
       --set loki.persistence.size=$LOKI_STORAGE_SIZE \
       --history-max 3 1>/dev/null
+    else
+      echo "Installing remote Loki..."
+      helm upgrade --install loki grafana/loki-stack \
+      -f monitoring/loki/values.yaml \
+      --namespace=$MONITORING_NAMESPACE \
+      --set loki.enabled="false" \
+      --set promtail.config.clients[0].url=$LOKI_REMOTE_URL \
+      --history-max 3 1>/dev/null
+    fi 
+    
   }
 
   [[ $GRAFANA_ENABLED != "true" ]] || {

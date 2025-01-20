@@ -6,8 +6,8 @@ persistence:
 grafana.ini:
   dataproxy:
     logging: true
-    timeout: 600s
-    keep_alive_seconds: 600s
+    timeout: 600
+    keep_alive_seconds: 600
 
 dashboardProviders: 
   dashboardproviders.yaml:
@@ -61,7 +61,10 @@ dashboards:
 
 ingress:
   enabled: false
-  annotations: {}
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "360"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "360"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "360"
   labels: {}
   path: /grafana
   pathType: Prefix

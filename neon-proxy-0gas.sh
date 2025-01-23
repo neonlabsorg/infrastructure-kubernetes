@@ -470,6 +470,7 @@ fi
     --set coreapi.resources.limits.memory=$CORE_API_MAX_MEM \
     --set coreapi.replicas=$CORE_API_REPLICAS \
     --set coreapi.logVerbosity=$CORE_API_LOG_VERBOSITY \
+    --set coreapi.COMMITMENT=$CORE_API_COMMITMENT \
     --set onePod.enabled=$ONE_PROXY_PER_NODE \
     --set ENABLE_SEND_TX_API=$PRX_ENABLE_SEND_TX_API \
     --set minimal_gas_price=$MINIMAL_GAS_PRICE \

@@ -64,7 +64,7 @@ spec:
             - name: RUST_LOG
               value: {{ .Values.coreapi.logVerbosity | default "warn" | quote }}
             - name: COMMITMENT
-              value: "processed"
+              value: {{ .Values.coreapi.COMMITMENT | default "processed" | quote }}
             - name: TRACER_DB_TYPE
               value: {{ .Values.coreapi.tracer_db.type }}
             - name: NEON_DB_CLICKHOUSE_URLS

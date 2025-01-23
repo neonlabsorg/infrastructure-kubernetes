@@ -9,6 +9,8 @@ ingress:
   className: "nginx"
   host: ""
   whitelistSourceRange: ""
+  cert_manager_cluster_issuer_annotation: ""
+  tls: false
 
 image:
   repository: neonlabsorg/neon-proxy.py

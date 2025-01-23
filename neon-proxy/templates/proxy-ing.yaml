@@ -5,6 +5,9 @@ metadata:
   namespace: {{ .Release.Namespace }}
   name: {{ .Release.Namespace }}-ing3
   annotations:
+    {{- if .Values.ingress.cert_manager_cluster_issuer_annotation }}
+    cert-manager.io/cluster-issuer: {{ .Values.ingress.cert_manager_cluster_issuer_annotation }}
+    {{- end }}
     app.kubernetes.io/name: {{ .Values.ingress.className }}
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
@@ -18,23 +21,29 @@ metadata:
 spec:
   ingressClassName: {{ .Values.ingress.className }}
   rules:
-    - http:
-        paths:
-          - backend:
-              service:
-                name: {{ .Values.service.name }}
-                port:
-                  number: {{ .Values.service.port }}
-            path: /(sol|neon|usdc|usdt)/?$
-            pathType: ImplementationSpecific
-          - backend:
-              service:
-                name: {{ .Values.service.name }}
-                port:
-                  number: {{ .Values.service.port }}
-            path: /
-            pathType: ImplementationSpecific
-      {{- if .Values.ingress.host }}
-      host: {{ .Values.ingress.host }}
-      {{- end }}
+  - http:
+      paths:
+        - backend:
+            service:
+              name: {{ .Values.service.name }}
+              port:
+                number: {{ .Values.service.port }}
+          path: /(sol|neon|usdc|usdt)/?$
+          pathType: ImplementationSpecific
+        - backend:
+            service:
+              name: {{ .Values.service.name }}
+              port:
+                number: {{ .Values.service.port }}
+          path: /
+          pathType: ImplementationSpecific
+    {{- if .Values.ingress.host }}
+    host: {{ .Values.ingress.host }}
+    {{- end }}
+{{- if .Values.ingress.tls }}
+  tls:
+    - hosts:
+      - {{ .Values.ingress.host }}
+      secretName: ssl-{{ .Values.ingress.host }}
+{{- end }}
 {{- end }}

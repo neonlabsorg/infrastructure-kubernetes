@@ -22,6 +22,9 @@ INDEXER_KEY_FILE="id3.json"
 ## "nginx" - for "nginx-ingress"
 INGRESS_CLASS="nginx"
 INGRESS_SERVICE_TYPE="NodePort"
+#INGRESS_CERT_MANAGER_CLUSTER_ISSUER_ANNOTATION="letsencrypt"
+#PROXY_HOST="neon-proxy.example.com"
+#INGRESS_TLS_ENABLED="false"
 
 ################
 ## SOLANA
@@ -42,7 +45,7 @@ PROXY_COUNT=2
 ## Keys per proxy
 KEYS_PER_PROXY=20
 
-#PROXY_HOST="neon-proxy.example.com"
+
 
 PROXY_MIN_CPU="500m"
 PROXY_MIN_MEM="1Gi"

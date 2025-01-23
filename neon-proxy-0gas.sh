@@ -478,6 +478,8 @@ fi
     --set ingress.enabled=$PROXY_INGRESS_ENABLED \
     --set ingress.whitelistSourceRange="`echo $PROXY_WHITELIST | sed -r 's/,/\\\,/g'`" \
     --set ingress.host=$PROXY_HOST \
+    --set ingress.tls=$INGRESS_TLS_ENABLED \
+    --set ingress.cert_manager_cluster_issuer_annotation=$INGRESS_CERT_MANAGER_CLUSTER_ISSUER_ANNOTATION \
     --timeout 3600s
 
 #     --set commit_level=$COMMIT_LEVEL \

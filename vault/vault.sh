@@ -19,5 +19,9 @@ capabilities = ["read"]
 
 path "${NAMESPACE}/data/core_api_env" {
 capabilities = ["read"]
-} 
+}
+
+path "${NAMESPACE}/data/core_rpc_env" {
+capabilities = ["read"]
+}
 EOF

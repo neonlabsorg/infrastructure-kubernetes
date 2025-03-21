@@ -79,6 +79,7 @@ source $VAR_FILE
 PROXY_ENV=$(grep -Po '^PRX_\K.*' $VAR_FILE)
 INDEXER_ENV=$(grep -Po '^IDX_\K.*' $VAR_FILE)
 CORE_API_ENV=$(grep -Po '^COR_\K.*' $VAR_FILE)
+CORE_RPC_ENV=$(grep -Po '^RPC_\K.*' $VAR_FILE)
 
 # Set values from a command line
 [ ! $CLI_NAMESPACE ] || NAMESPACE=$CLI_NAMESPACE
@@ -319,7 +320,10 @@ echo "Check vault token"
   [[ $VAULT_UNSEAL_KEY ]] || [[ ! -f "$VAULT_KEYS_FILE" ]] || {
     VAULT_UNSEAL_KEY="$(cat $VAULT_KEYS_FILE | jq -r '.unseal_keys_b64[]')"
     [[ $VAULT_UNSEAL_KEY ]] || echo -e "\n###################\nWARNING: VAULT_UNSEAL_KEY no foud! Please make sure Vault is available\n###################\n"
-    kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault operator unseal ${VAULT_UNSEAL_KEY}" 
+    until kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault operator unseal ${VAULT_UNSEAL_KEY}"
+    do 
+      echo "Try again"
+    done
   }
   [[ $VAULT_ROOT_TOKEN ]] || {
     echo "ERROR: No VAULT_ROOT_TOKEN found"
@@ -374,11 +378,22 @@ until kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_E
 do 
   echo "Try again"
 done
-echo "Setup core-api env variables"
-until kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$CORE_API_ENV' | xargs vault kv put ${NAMESPACE}/core_api_env" 1>/dev/null
-do 
-  echo "Try again"
-done
+if [[  $CORE_API_ENABLED == "true" ]]
+then
+  echo "Setup core-api env variables"
+  until kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$CORE_API_ENV' | xargs vault kv put ${NAMESPACE}/core_api_env" 1>/dev/null
+  do 
+    echo "Try again"
+  done
+fi
+if [[  $CORE_RPC_ENABLED == "true" ]]
+then
+  echo "Setup core-rpc env variables"
+  until kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$CORE_RPC_ENV' | xargs vault kv put ${NAMESPACE}/core_rpc_env" 1>/dev/null
+  do 
+    echo "Try again"
+  done
+fi
 
   ### 2.1 Vault auto unseal
 if [[ $VAULT_AUTO_UNSEAL_ENABLED == "true" && $VAULT_ENABLED == "true" && $VAULT_TYPE != "dev" ]]
@@ -452,6 +467,7 @@ fi
     --set perm_account_limit=$PERM_ACCOUNT_LIMIT \
     --set proxyCount=$PROXY_COUNT \
     --set keysPerProxy=$KEYS_PER_PROXY \
+    --set image.repository=$REPOSITORY \
     --set image.tag=$PROXY_VER \
     --set resources.requests.cpu=$PROXY_MIN_CPU \
     --set resources.requests.memory=$PROXY_MIN_MEM \
@@ -471,6 +487,17 @@ fi
     --set coreapi.replicas=$CORE_API_REPLICAS \
     --set coreapi.logVerbosity=$CORE_API_LOG_VERBOSITY \
     --set coreapi.COMMITMENT=$CORE_API_COMMITMENT \
+    --set corerpc.enabled=$CORE_RPC_ENABLED \
+    --set corerpc.image.repository=$CORE_RPC_REPOSITORY \
+    --set corerpc.image.tag=$CORE_RPC_TAG \
+    --set corerpc.hpa.enabled=$CORE_RPC_HPA_ENABLED \
+    --set corerpc.resources.requests.cpu=$CORE_RPC_MIN_CPU \
+    --set corerpc.resources.requests.memory=$CORE_RPC_MIN_MEM \
+    --set corerpc.resources.limits.cpu=$CORE_RPC_MAX_CPU \
+    --set corerpc.resources.limits.memory=$CORE_RPC_MAX_MEM \
+    --set corerpc.replicas=$CORE_RPC_REPLICAS \
+    --set corerpc.logVerbosity=$CORE_RPC_LOG_VERBOSITY \
+    --set corerpc.COMMITMENT=$CORE_RPC_COMMITMENT \
     --set onePod.enabled=$ONE_PROXY_PER_NODE \
     --set ENABLE_SEND_TX_API=$PRX_ENABLE_SEND_TX_API \
     --set minimal_gas_price=$MINIMAL_GAS_PRICE \

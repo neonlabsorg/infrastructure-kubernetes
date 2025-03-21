@@ -22,10 +22,14 @@ data:
     #!/bin/bash
     source /vault/secrets/proxy-env
     source /vault/secrets/indexer-env
-    source .venv/bin/activate
-    python3 -m indexer
+    /app/neon-proxy-indexer
   run-core-api.sh: |
     #!/bin/bash
     source /vault/secrets/proxy-env
     source /vault/secrets/core-api-env
     /spl/bin/neon-core-api -H 0.0.0.0:8085
+  run-core-rpc.sh: |
+    #!/bin/bash
+    source /vault/secrets/proxy-env
+    source /vault/secrets/core-rpc-env
+    /opt/neon-rpc /opt/libs/current/ 0.0.0.0:8080

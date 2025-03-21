@@ -17,6 +17,7 @@ neon-proxy/charts/*.tgz
 mainnet-keys/
 mainnet_ro-keys/
 devnet-keys/
+devnet-keys-rust/
 tmp.txt
 
 config*.ini

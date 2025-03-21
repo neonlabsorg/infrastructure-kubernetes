@@ -77,3 +77,27 @@ spec:
     application-pod: neon-core-api  
     {{- include "neon-proxy.selectorLabels" . | nindent 4 }}
 {{- end }}
+
+{{- if .Values.corerpc.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: {{ .Values.namespace }}
+  name: {{ .Values.corerpc.service.name }}
+  labels:
+    application-pod: neon-core-rpc
+    {{- include "neon-proxy.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.corerpc.service.type }}
+  sessionAffinity: {{ .Values.corerpc.service.sessionAffinity }}
+  clusterIP: {{ .Values.corerpc.service.clusterIP }}
+  ports:
+    - port: {{ .Values.corerpc.service.port }}
+      targetPort: {{ .Values.corerpc.service.port }}
+      protocol: {{ .Values.corerpc.service.protocol }}
+      name: {{ .Values.corerpc.service.name }}
+  selector:
+    application-pod: neon-core-rpc
+    {{- include "neon-proxy.selectorLabels" . | nindent 4 }}
+{{- end }}

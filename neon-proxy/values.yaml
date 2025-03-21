@@ -93,6 +93,9 @@ volumeMounts:
   - name: proxy-keys-script
     mountPath: /opt/neon-proxy/core-api/run-core-api.sh
     subPath: run-core-api.sh
+  - name: proxy-keys-script
+    mountPath: /opt/neon-proxy/core-rpc/run-core-rpc.sh
+    subPath: run-core-rpc.sh
   #- name: proxy-keys-script
   #  mountPath: /opt/run-gas-tank.sh
   #  subPath: run-gas-tank.sh
@@ -109,7 +112,7 @@ indexer:
   service:
     name: indexer-svc
     type: ClusterIP
-    port: 8888
+    port: 9102
     protocol: TCP
 #  indexerKey: ""
   labels: {}
@@ -142,6 +145,32 @@ coreapi:
   logVerbosity: "warn" # One of: off | error | warn | info | debug
   COMMITMENT: "processed"
 
+corerpc:
+  enabled: false
+  image:
+    repository: neonlabsorg/evm_loader
+    tag: latest
+  replicas: 2
+  addr: "core-rpc-svc"
+  port: "8080"
+  service:
+    name: core-rpc-svc
+    type: ClusterIP
+    port: 8080
+    protocol: TCP
+  tracer_db:
+    type: "none"
+    clickhouse_urls: ""
+  labels: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  podAnnotations: {}
+  hpa:
+    enabled: false
+    targetCPUUtilizationPercentage: 60
+  logVerbosity: "warn" # One of: off | error | warn | info | debug
+  COMMITMENT: "confirmed"
 
 gasTank:
   enabled: false

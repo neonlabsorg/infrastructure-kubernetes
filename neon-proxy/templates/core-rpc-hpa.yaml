@@ -1,0 +1,20 @@
+{{- if .Values.corerpc.enabled }}
+{{- if .Values.corerpc.hpa.enabled }}
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: core-rpc
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "neon-proxy.labels" . | nindent 4 }}
+spec:
+  maxReplicas: {{ mul .Values.corerpc.replicas 2 }}
+  minReplicas: {{ .Values.corerpc.replicas }}
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: core-rpc
+  targetCPUUtilizationPercentage: {{ .Values.corerpc.hpa.targetCPUUtilizationPercentage }}
+{{- end }}
+{{- end }}

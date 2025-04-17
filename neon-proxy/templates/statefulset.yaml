@@ -107,6 +107,15 @@ spec:
               memory: {{ .Values.resources.limits.memory }}
         {{- end }}
         {{- if .Values.livenessProbe.enabled }}
+        {{- if .Values.livenessProbe.httpGet.enabled }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: exporter
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            timeoutSeconds: 5
+        {{- else }}
           livenessProbe:
             exec:
               command:
@@ -118,7 +127,17 @@ spec:
             periodSeconds: 15
             timeoutSeconds: 5
         {{- end }}
+        {{- end }}
         {{- if .Values.readinessProbe.enabled }}
+        {{- if .Values.livenessProbe.httpGet.enabled }}
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: exporter
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 5
+        {{- else }}
           readinessProbe:
             exec:
               command:
@@ -129,6 +148,7 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 5
             timeoutSeconds: 5
+        {{- end }}
         {{- end }}
         {{- if eq .Values.ENABLE_SEND_TX_API "YES" }}
           lifecycle:

@@ -481,6 +481,8 @@ fi
     --set ingress.host=$PROXY_HOST \
     --set ingress.tls=$INGRESS_TLS_ENABLED \
     --set ingress.cert_manager_cluster_issuer_annotation=$INGRESS_CERT_MANAGER_CLUSTER_ISSUER_ANNOTATION \
+    --set livenessProbe.httpGet=$PROXY_PROBE_HTTP_GET_ENABLED \
+    --set readinessProbe.httpGet=$PROXY_PROBE_HTTP_GET_ENABLED \
     --timeout 3600s
 
 #     --set commit_level=$COMMIT_LEVEL \

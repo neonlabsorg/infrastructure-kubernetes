@@ -99,8 +99,10 @@ volumeMounts:
 
 livenessProbe:
   enabled: true
+  httpGet: false
 readinessProbe:
   enabled: true
+  httpGet: false
 
 workingDir: "/opt"
 

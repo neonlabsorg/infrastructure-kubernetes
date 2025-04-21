@@ -129,7 +129,7 @@ spec:
         {{- end }}
         {{- end }}
         {{- if .Values.readinessProbe.enabled }}
-        {{- if .Values.livenessProbe.httpGet }}
+        {{- if .Values.readinessProbe.httpGet }}
           readinessProbe:
             httpGet:
               path: /healthz

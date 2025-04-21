@@ -30,8 +30,44 @@
 --         RETURN column_count > 0;
 --     END;
 --     $$;
+    ---- Prepare stage
+--     CREATE OR REPLACE FUNCTION does_table_have_column(t_name TEXT, c_name TEXT)
+--         RETURNS BOOLEAN
+--         LANGUAGE plpgsql
+--     AS
+--     $$
+--     DECLARE
+--         column_count INT;
+--     BEGIN
+--         SELECT COUNT(t.column_name)
+--           INTO column_count
+--           FROM information_schema.columns AS t
+--          WHERE t.table_name = t_name AND t.column_name=c_name;
+--         RETURN column_count > 0;
+--     END;
+--     $$;
+--
+--     CREATE OR REPLACE FUNCTION does_table_exist(t_name TEXT)
+--         RETURNS BOOLEAN
+--         LANGUAGE plpgsql
+--     AS
+--     $$
+--     DECLARE
+--         column_count INT;
+--     BEGIN
+--         SELECT COUNT(t.column_name)
+--           INTO column_count
+--           FROM information_schema.columns AS t
+--          WHERE t.table_name = t_name;
+--         RETURN column_count > 0;
+--     END;
+--     $$;
 
     --- Initialize stage
+
+CREATE DOMAIN U256 AS NUMERIC
+CHECK (VALUE >= 0 AND VALUE < 2^256)
+CHECK (SCALE(VALUE) = 0);
 
 CREATE TABLE IF NOT EXISTS constants (
     key TEXT UNIQUE,
@@ -71,11 +107,22 @@ CREATE TABLE IF NOT EXISTS solana_blocks (
     block_time BIGINT,
     parent_block_slot BIGINT,
     is_finalized BOOL,
-    is_active BOOL
+    is_active BOOL,
+    cu_price_percentiles INT ARRAY
 );
+ALTER TABLE solana_blocks
+    ADD COLUMN IF NOT EXISTS cu_price_percentiles INT ARRAY;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_solana_blocks_slot ON solana_blocks(block_slot);
 CREATE INDEX IF NOT EXISTS idx_solana_blocks_hash ON solana_blocks(block_hash);
 CREATE INDEX IF NOT EXISTS idx_solana_blocks_slot_active ON solana_blocks(block_slot, is_active);
+
+CREATE TABLE IF NOT EXISTS neon_block_fees (
+    block_slot BIGINT,
+    chain_id BIGINT,
+    base_fee TEXT
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_neon_block_fees ON neon_block_fees(block_slot, chain_id);
 
 CREATE TABLE IF NOT EXISTS neon_transaction_logs (
     address TEXT,
@@ -140,6 +187,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_solana_neon_transactions_neon_sol_idx_inne
 CREATE INDEX IF NOT EXISTS idx_solana_neon_transactions_neon_sig ON solana_neon_transactions(neon_sig, block_slot);
 CREATE INDEX IF NOT EXISTS idx_solana_neon_transactions_neon_block ON solana_neon_transactions(block_slot);
 
+-- TODO: remove after DB migration
 CREATE TABLE IF NOT EXISTS neon_transactions (
     neon_sig TEXT,
     tx_type INT,
@@ -151,8 +199,12 @@ CREATE TABLE IF NOT EXISTS neon_transactions (
     block_slot BIGINT,
     tx_idx INT,
 
+    chain_id INT DEFAULT 0,
     nonce TEXT,
     gas_price TEXT,
+    max_fee_per_gas TEXT,
+    max_priority_fee_per_gas TEXT,
+    priority_fee_spent TEXT,
     gas_limit TEXT,
     value TEXT,
     gas_used TEXT,
@@ -172,11 +224,51 @@ CREATE TABLE IF NOT EXISTS neon_transactions (
     calldata TEXT,
     logs BYTEA
 );
-CREATE INDEX IF NOT EXISTS idx_neon_transactions_sol_sig_block ON neon_transactions(sol_sig, block_slot);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_neon_transactions_neon_sig_block ON neon_transactions(neon_sig, block_slot);
-DROP INDEX IF EXISTS idx_neon_transactions_sender_nonce_block;
-CREATE INDEX IF NOT EXISTS idx_neon_transactions_sender_nonce_v_block ON neon_transactions(from_addr, nonce, v, block_slot);
-CREATE INDEX IF NOT EXISTS idx_neon_transactions_slot_tx_idx ON neon_transactions(block_slot, tx_idx);
+
+ALTER TABLE neon_transactions
+    ADD COLUMN IF NOT EXISTS chain_id INT DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS max_fee_per_gas TEXT,
+    ADD COLUMN IF NOT EXISTS max_priority_fee_per_gas TEXT,
+    ADD COLUMN IF NOT EXISTS priority_fee_spent TEXT;
+-- TODO: done
+
+CREATE TABLE IF NOT EXISTS neon_compact_transactions (
+    neon_sig TEXT,
+
+    payer TEXT,
+    nonce BIGINT,
+    index INT,
+    chain_id BIGINT,
+
+    sol_sig TEXT,
+    sol_ix_idx INT,
+    sol_ix_inner_idx INT,
+
+    block_slot BIGINT,
+    tx_idx INT,
+
+    base_fee_per_gas NUMERIC(80, 0),
+    base_fee_used BIGINT,
+
+    priority_fee_per_gas NUMERIC(80, 0),
+    priority_fee_used BIGINT,
+
+    gas_used BIGINT,
+    sum_gas_used BIGINT,
+
+    status SMALLINT,
+    is_canceled BOOLEAN,
+
+    rlp_body BYTEA,
+    logs TEXT
+);
+
+ALTER TABLE neon_compact_transactions ADD COLUMN IF NOT EXISTS base_fee_used BIGINT DEFAULT 0;
+ALTER TABLE neon_compact_transactions ADD COLUMN IF NOT EXISTS priority_fee_per_gas BIGINT DEFAULT 0;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_neon_txs_neon_sig_slot ON neon_compact_transactions(neon_sig, block_slot);
+CREATE INDEX IF NOT EXISTS idx_neon_txs_payer_nonce_chain_slot ON neon_compact_transactions(payer, nonce, index, chain_id, block_slot);
+CREATE INDEX IF NOT EXISTS idx_neon_txs_slot_tx_idx ON neon_compact_transactions(block_slot, tx_idx);
 
 
 CREATE TABLE IF NOT EXISTS solana_alt_transactions (
@@ -207,12 +299,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_solana_transaction_costs_sig ON solana_tra
 CREATE INDEX IF NOT EXISTS idx_solana_transaction_costs_slot ON solana_transaction_costs(block_slot);
 CREATE INDEX IF NOT EXISTS idx_solana_transaction_costs_operator ON solana_transaction_costs(operator, block_slot);
 
-CREATE TABLE IF NOT EXISTS solana_transaction_signatures (
-    slot  BIGINT,
-    signature   TEXT
-);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_solana_transaction_signatures_sig ON solana_transaction_signatures(block_slot);
-
 CREATE TABLE IF NOT EXISTS stuck_neon_holders (
     block_slot BIGINT,
     json_data_list TEXT
@@ -231,3 +317,73 @@ CREATE TABLE IF NOT EXISTS solana_alt_infos (
     json_data_list TEXT
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_solana_alt_infos_block ON solana_alt_infos(block_slot);
+
+CREATE TABLE IF NOT EXISTS neon_scheduled_transactions(
+    block_slot BIGINT,
+
+    tree_address TEXT,
+    is_active BOOLEAN,
+
+    neon_sig TEXT,
+    index INT
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_scheduled_txs_slot ON neon_scheduled_transactions(block_slot, neon_sig);
+CREATE INDEX IF NOT EXISTS idx_scheduled_txs_tree ON neon_scheduled_transactions(tree_address, is_active);
+
+CREATE TABLE IF NOT EXISTS neon_scheduled_transactions_body(
+    block_slot BIGINT,
+
+    tree_address TEXT,
+    is_active BOOLEAN,
+
+    neon_sig TEXT,
+    rlp_body BYTEA
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_scheduled_txs_body_sig ON neon_scheduled_transactions_body(neon_sig);
+CREATE INDEX IF NOT EXISTS idx_scheduled_txs_body_slot ON neon_scheduled_transactions_body(block_slot, neon_sig);
+CREATE INDEX IF NOT EXISTS idx_scheduled_txs_body_tree ON neon_scheduled_transactions_body(tree_address, is_active);
+
+CREATE TABLE IF NOT EXISTS neon_scheduled_transactions_status(
+    block_slot BIGINT,
+
+    tree_address TEXT,
+    is_active BOOLEAN,
+
+    neon_sig TEXT,
+    holder_address TEXT,
+    status INT
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_scheduled_txs_status_slot ON neon_scheduled_transactions_status(block_slot, neon_sig, status);
+CREATE INDEX IF NOT EXISTS idx_scheduled_txs_status_tree ON neon_scheduled_transactions_status(tree_address, is_active);
+
+CREATE TABLE IF NOT EXISTS neon_scheduled_transactions_signature(
+    block_slot BIGINT,
+
+    tree_address TEXT,
+    is_active BOOLEAN,
+
+    neon_sig TEXT,
+    sol_sig TEXT,
+    sol_payer TEXT,
+
+    neon_payer TEXT,
+    nonce BIGINT,
+    chain_id BIGINT
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_scheduled_txs_sig_neon_sig_slot ON neon_scheduled_transactions_signature(neon_sig, block_slot, is_active);
+CREATE INDEX IF NOT EXISTS idx_scheduled_txs_sig_slot ON neon_scheduled_transactions_signature(block_slot);
+CREATE INDEX IF NOT EXISTS idx_scheduled_txs_sig_tree ON neon_scheduled_transactions_signature(tree_address, is_active);
+
+CREATE TABLE IF NOT EXISTS neon_scheduled_transactions_relation (
+    block_slot BIGINT,
+
+    tree_address TEXT,
+    is_active BOOLEAN,
+
+    parent_neon_sig TEXT,
+    child_neon_sig TEXT
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_scheduled_txs_rel_parents ON neon_scheduled_transactions_relation(parent_neon_sig, child_neon_sig, block_slot, is_active);
+CREATE INDEX IF NOT EXISTS idx_scheduled_txs_rel_childs ON neon_scheduled_transactions_relation(child_neon_sig, parent_neon_sig, block_slot);
+CREATE INDEX IF NOT EXISTS idx_scheduled_txs_rel_slot ON neon_scheduled_transactions_relation(block_slot);
+CREATE INDEX IF NOT EXISTS idx_scheduled_txs_rel_tree ON neon_scheduled_transactions_relation(tree_address, is_active);

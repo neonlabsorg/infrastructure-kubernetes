@@ -14,7 +14,7 @@ metadata:
     nginx.ingress.kubernetes.io/rewrite-target: /solana/$1
     nginx.ingress.kubernetes.io/upstream-hash-by: $remote_addr
     nginx.ingress.kubernetes.io/configuration-snippet: |
-      if ($request_method !~ ^(GET|POST)$) {
+      if ($request_method = PROPFIND) {
         return 405;
       }
     nginx.ingress.kubernetes.io/enable-cors: "true"

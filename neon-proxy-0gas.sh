@@ -258,6 +258,8 @@ kubectl create namespace $NAMESPACE 2>/dev/null
   --namespace ingress-nginx --create-namespace \
   --history-max 3 \
   --set controller.service.type=$INGRESS_SERVICE_TYPE \
+  --set controller.allowSnippetAnnotations=true \
+  --set controller.config.annotations-risk-level="Critical" \
   --set controller.service.nodePorts.http=32080 \
   --set controller.service.nodePorts.https=32443  1>/dev/null
 }

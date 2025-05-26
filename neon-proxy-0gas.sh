@@ -388,55 +388,64 @@ then
     echo "Installing Vault auto unseal module..."
     # Read keys and token from file
     VAULT_UNSEAL_KEY="$(cat $VAULT_KEYS_FILE | jq -r '.unseal_keys_b64[]')"
-    VAULT_ROOT_TOKEN="$(cat $VAULT_KEYS_FILE | jq -r '.root_token')"
+    VAULT_ROOT_TOKEN="$(cat "$VAULT_KEYS_FILE" | jq -r '.root_token // empty')"
 
-    # Vault secrets for tokens
-    VAULT_ROOT_TOKEN_SECRET_NAME=vault-root-token
-    VAULT_KEYS_SECRET_NAME=vault-keys
-    # Try to unseal each SCAN_DELAY seconds
-    SCAN_DELAY=5
-
-
-    # Remove old secrets
-    secrets=("$VAULT_ROOT_TOKEN_SECRET_NAME" "$VAULT_KEYS_SECRET_NAME")
-
-    for secret in "${secrets[@]}"; do
-      if kubectl get secret $secret -n ${VAULT_NAMESPACE} > /dev/null 2>&1; then
-        echo "Warning: Secret $secret already exists in namespace ${VAULT_NAMESPACE}. Deleting the old secret..."
-        kubectl delete secret $secret -n ${VAULT_NAMESPACE}
-      fi
-    done
-
-    # Create vault-root-token secret
-    kubectl create secret generic $VAULT_ROOT_TOKEN_SECRET_NAME \
-    --from-literal=root_token=$(echo -n "$VAULT_ROOT_TOKEN") \
-    -n ${VAULT_NAMESPACE}
-
-    # Create vault-root-token secret
-    # readarray -t unseal_keys_array <<< "$VAULT_UNSEAL_KEY"
-    unseal_keys_array=()
-    while IFS= read -r line; do
-      unseal_keys_array+=("$line")
-    done <<< "$VAULT_UNSEAL_KEY"
-
-    keys=""
-
-    for i in "${!unseal_keys_array[@]}"; do
-      key=${unseal_keys_array[$i]}
-      keys="$keys --from-literal=unseal_keys_b64_$((i+1))=$key"
-    done
-
-    kubectl create secret generic $VAULT_KEYS_SECRET_NAME $keys -n ${VAULT_NAMESPACE}
+    # Check if VAULT_UNSEAL_KEY or VAULT_ROOT_TOKEN is empty
+    if [ -z "$VAULT_UNSEAL_KEY" ] || [ -z "$VAULT_ROOT_TOKEN" ]; then
+        echo
+        echo "ERROR: Failed to install Vault auto-unseal module."
+        echo "Either 'unseal_keys_b64' or 'root_token' from '$VAULT_KEYS_FILE' is empty."
+        echo "Please ensure that '$VAULT_KEYS_FILE' exists and is correct."
+        echo
+    else
+        # Vault secrets for tokens
+        VAULT_ROOT_TOKEN_SECRET_NAME=vault-root-token
+        VAULT_KEYS_SECRET_NAME=vault-keys
+        # Try to unseal each SCAN_DELAY seconds
+        SCAN_DELAY=5
 
 
-    helm upgrade --install --atomic vault-autounseal vault-autounseal/vault-autounseal \
-      --namespace=$VAULT_NAMESPACE \
-      --set=settings.vault_url="http://vault.${VAULT_NAMESPACE}.svc.cluster.local:8200" \
-      --set=settings.vault_secret_shares=${VAULT_KEY_SHARED} \
-      --set=settings.vault_secret_threshold=${VAULT_KEY_THRESHOLD} \
-      --set=settings.vault_root_token_secret=${VAULT_ROOT_TOKEN_SECRET_NAME} \
-      --set=settings.vault_keys_secret=${VAULT_KEYS_SECRET_NAME} \
-      --set=settings.scan_delay=${SCAN_DELAY} >/dev/null
+        # Remove old secrets
+        secrets=("$VAULT_ROOT_TOKEN_SECRET_NAME" "$VAULT_KEYS_SECRET_NAME")
+
+        for secret in "${secrets[@]}"; do
+          if kubectl get secret $secret -n ${VAULT_NAMESPACE} > /dev/null 2>&1; then
+            echo "Warning: Secret $secret already exists in namespace ${VAULT_NAMESPACE}. Deleting the old secret..."
+            kubectl delete secret $secret -n ${VAULT_NAMESPACE}
+          fi
+        done
+
+        # Create vault-root-token secret
+        kubectl create secret generic $VAULT_ROOT_TOKEN_SECRET_NAME \
+        --from-literal=root_token=$(echo -n "$VAULT_ROOT_TOKEN") \
+        -n ${VAULT_NAMESPACE}
+
+        # Create vault-root-token secret
+        # readarray -t unseal_keys_array <<< "$VAULT_UNSEAL_KEY"
+        unseal_keys_array=()
+        while IFS= read -r line; do
+          unseal_keys_array+=("$line")
+        done <<< "$VAULT_UNSEAL_KEY"
+
+        keys=""
+
+        for i in "${!unseal_keys_array[@]}"; do
+          key=${unseal_keys_array[$i]}
+          keys="$keys --from-literal=unseal_keys_b64_$((i+1))=$key"
+        done
+
+        kubectl create secret generic $VAULT_KEYS_SECRET_NAME $keys -n ${VAULT_NAMESPACE}
+
+
+        helm upgrade --install --atomic vault-autounseal vault-autounseal/vault-autounseal \
+          --namespace=$VAULT_NAMESPACE \
+          --set=settings.vault_url="http://vault.${VAULT_NAMESPACE}.svc.cluster.local:8200" \
+          --set=settings.vault_secret_shares=${VAULT_KEY_SHARED} \
+          --set=settings.vault_secret_threshold=${VAULT_KEY_THRESHOLD} \
+          --set=settings.vault_root_token_secret=${VAULT_ROOT_TOKEN_SECRET_NAME} \
+          --set=settings.vault_keys_secret=${VAULT_KEYS_SECRET_NAME} \
+          --set=settings.scan_delay=${SCAN_DELAY} >/dev/null
+    fi
 fi
 
 

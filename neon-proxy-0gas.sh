@@ -512,11 +512,12 @@ fi
 
 #     --set commit_level=$COMMIT_LEVEL \
 #    --set-file indexer.indexerKey=$KEY_DIR/$INDEXER_KEY_FILE \
-
-    kubectl -n ${NAMESPACE} wait --for=condition=ready pod neon-proxy-0 --timeout=1m || { 
-      echo "ERROR: Proxy installation failed"
-      exit 1
-    }
+    if [[ $PROXY_COUNT > 0 ]]; then
+      kubectl -n ${NAMESPACE} wait --for=condition=ready pod neon-proxy-0 --timeout=1m || { 
+        echo "ERROR: Proxy installation failed"
+        exit 1
+      }
+    fi
 
     [[ $TRACER_ENABLED != "true" ]] || {
     echo "Installing Trace-api..."

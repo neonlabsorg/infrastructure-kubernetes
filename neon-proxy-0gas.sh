@@ -301,6 +301,16 @@ helm upgrade --install --atomic postgres postgres/ \
     exit 1 
 }
 
+# 2.1 Postgres Exporter
+POSTGRES_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=${POSTGRES_SSL_MODE}"
+
+if [[ $POSTGRES_EXPORTER_ENABLED == "true" ]] 
+then
+  kubectl create secret generic postgres-exporter-secret --namespace $NAMESPACE --from-literal=url="$POSTGRES_URL" --dry-run=client -o yaml | kubectl apply -f -
+  helm upgrade --install --atomic postgres-exporter prometheus-community/prometheus-postgres-exporter --wait-for-jobs --history-max 3 --namespace=$NAMESPACE -f ./monitoring/postgres-exporter/values.yaml
+fi
+
+
 # ## 2. Vault
 echo "Setup secrets..."
 [[ ! $FIRST_RUN ]] || [[  $VAULT_ENABLED != "true" ]] || {

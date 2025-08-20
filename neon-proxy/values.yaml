@@ -17,6 +17,11 @@ image:
   pullPolicy: Always
   tag: "v0.11.2"
 
+neonRpcImage:
+  repository: neonlabsorg/evm_loader
+  pullPolicy: Always
+  tag: "v1.21.0"
+
 resources:
   requests:
     cpu: 500m

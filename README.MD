@@ -112,3 +112,11 @@ If you need monitoring part
       PYTH_MAPPING_ACCOUNT
       PP_SOLANA_URL      
 
+## Helmfile setup
+
+    mkdir helmfile && cd helmfile
+    wget https://github.com/helmfile/helmfile/releases/download/v0.160.0/helmfile_0.160.0_linux_amd64.tar.gz
+    tar -xzvf helmfile_0.160.0_linux_amd64.tar.gz
+    chmod +x helmfile
+    sudo mv helmfile /usr/bin/helmfile
+    helm plugin install https://github.com/databus23/helm-diff

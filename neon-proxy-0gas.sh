@@ -540,6 +540,7 @@ fi
       --set-file extraScrapeConfigs=monitoring/prometheus/extraScrapeConfigs.yaml 1>/dev/null
   }
 
+
   [[ $LOKI_ENABLED != "true" ]] || {
     
     if [[ -z $LOKI_REMOTE_URL ]]; then
@@ -552,15 +553,19 @@ fi
       --set loki.persistence.size=$LOKI_STORAGE_SIZE \
       --history-max 3 1>/dev/null
     else
+      if [[ -z $REMOTE_LOKI_STATIC_LABEL_PROVIDER_NAME ]]; then
+        REMOTE_LOKI_STATIC_LABEL_PROVIDER_NAME="provider_name_not_set"
+      fi
+
       echo "Installing remote Loki..."
       helm upgrade --install loki grafana/loki-stack \
       -f monitoring/loki/values.yaml \
       --namespace=$MONITORING_NAMESPACE \
       --set loki.enabled="false" \
       --set promtail.config.clients[0].url=$LOKI_REMOTE_URL \
+      --set promtail.config.snippets.pipelineStages[4].static_labels.logs_from=$REMOTE_LOKI_STATIC_LABEL_PROVIDER_NAME \
       --history-max 3 1>/dev/null
-    fi 
-    
+    fi
   }
 
   [[ $GRAFANA_ENABLED != "true" ]] || {

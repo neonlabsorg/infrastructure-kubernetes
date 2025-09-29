@@ -29,7 +29,7 @@ loki:
 promtail:
   enabled: true
   image:
-    tag: 3.3.0
+    tag: 3.5.1
   config:
     snippets:
       pipelineStages:
@@ -42,6 +42,8 @@ promtail:
         - structured_metadata:
             tx:
             ctx:
+        # - static_labels:
+        #     external_provider: "not_set"
     logLevel: info
     serverPort: 3101
     clients:

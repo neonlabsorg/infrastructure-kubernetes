@@ -20,19 +20,19 @@ groups:
 
   - name: neon_proxy
     rules:
-      - alert: operator key balance less than 2
+      - alert: operator key execution balance less than 2
         annotations:
           summary: operator key balance less than 2
           description: operator key balance less than 2
-        expr: operator_sol_balance < 2
+        expr: operator_execution_token_balance / 1000000000 < 2
         for: 5s
         labels:
           severity: warning
-      - alert: operator key balance less than 1
+      - alert: operator key execution balance less than 1
         annotations:
           summary: operator key balance less than 1
           description: operator key balance less than 1
-        expr: operator_sol_balance < 1
+        expr: operator_execution_token_balance / 1000000000 < 1
         for: 5s
         labels:
           severity: critical
@@ -44,22 +44,6 @@ groups:
         for: 5s
         labels:
           severity: warning
-      - alert: db connection is lost
-        annotations:
-          summary: db connection is lost
-          description: db connection is lost, gotta do something
-        expr: db_health == 0
-        for: 5s
-        labels:
-          severity: critical
-      - alert: solana rpc connection is lost
-        annotations:
-          summary: solana rpc connection is lost
-          description: solana rpc connection is lost, gotta do something
-        expr: solana_rpc_health == 0
-        for: 5s
-        labels:
-          severity: critical
       - alert: neon_tx_canceled
         annotations:
           summary: neon_tx_canceled

@@ -18,7 +18,7 @@ migrate:
 image:
   repository: "postgres"
   pullPolicy: "IfNotPresent"
-  tag: "14.0"
+  tag: "15.6"
 
 service:
   name: dbport
@@ -39,15 +39,12 @@ persistence:
   size: "50Gi"
   storageClass: ""
 
-#
 postgresql:
-  maxConnections: 2000
-#
+  maxConnections: 4000
 
 env:
-  - name: MAX_CONNECTIONS
-    value: "1000"
-
+  - name: PGDATA
+    value: "/var/lib/postgresql/data/pgdata"
 
 POSTGRES_ADMIN_USER: "postgres"
 POSTGRES_ADMIN_PASSWD: ""
@@ -66,5 +63,6 @@ volumeMounts:
   - name: postgresdata
     mountPath: /var/lib/postgresql/data/
 
-extendedConfiguration: |
-        max_connections = 2000
+upgrade_14_to_15:
+  enabled: false
+  img_tag: "v1"

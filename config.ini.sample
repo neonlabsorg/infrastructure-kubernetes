@@ -22,6 +22,9 @@ INDEXER_KEY_FILE="id3.json"
 ## "nginx" - for "nginx-ingress"
 INGRESS_CLASS="nginx"
 INGRESS_SERVICE_TYPE="NodePort"
+#INGRESS_CERT_MANAGER_CLUSTER_ISSUER_ANNOTATION="letsencrypt"
+#PROXY_HOST="neon-proxy.example.com"
+#INGRESS_TLS_ENABLED="false"
 
 ################
 ## SOLANA
@@ -42,7 +45,7 @@ PROXY_COUNT=2
 ## Keys per proxy
 KEYS_PER_PROXY=20
 
-#PROXY_HOST="neon-proxy.example.com"
+
 
 PROXY_MIN_CPU="500m"
 PROXY_MIN_MEM="1Gi"
@@ -50,6 +53,8 @@ PROXY_MAX_CPU="1000m"
 PROXY_MAX_MEM="4Gi"
 
 ONE_PROXY_PER_NODE="false"
+
+PROXY_WHITELIST=""
 
 ## PROXY ENV   
 PRX_FAUCET_URL=""
@@ -134,6 +139,18 @@ PROMETHEUS_STORAGE_CLASS="default"
 PROMETHEUS_STORAGE_SIZE="10Gi"
 PROMETHEUS_INGRESS_ENABLED="true"
 PROMETHEUS_INGRESS_PATH="/prometheus"
+
+
+################
+## LOKI
+################
+
+#IF LOKI_ENABLED=true you can set up LOKI_REMOTE_URL which will disable local loki. Promtail will send data to LOKI_REMOTE_URL
+LOKI_STORAGE_CLASS="gp2"
+LOKI_STORAGE_SIZE="10Gi"
+LOKI_REMOTE_URL='https://remote-loki-url/loki/api/v1/push'
+#Static label 'logs_from' for all logs  sending to LOKI_REMOTE_URL. Works only if LOKI_REMOTE_URL is set.
+REMOTE_LOKI_STATIC_LABEL_PROVIDER_NAME="org_name"
 
 ################
 ## Grafana

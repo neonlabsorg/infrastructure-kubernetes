@@ -1,0 +1,12 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: proxy-network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app: neon-proxy
+  ingress:
+  - from:
+    - ipBlock:
+        cidr: 89.115.99.216/32

@@ -1,6 +1,7 @@
 injector:
   enabled: true
-
+  agentDefaults:
+    cpuRequest: "100m"
 environment: ""
 
 server:

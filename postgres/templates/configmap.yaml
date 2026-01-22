@@ -8,3 +8,6 @@ metadata:
 data:
   neon-db.sql: {{ tpl (.Files.Get "files/neon-db.sql") . | quote }}
   vault.sql: {{ tpl (.Files.Get "files/vault.sql") . | quote }}
+{{- if .Values.upgrade_14_to_15.enabled }}
+  upgrade_postgres_db_14_to_15.sh: {{ tpl (.Files.Get "files/upgrade_postgres_db_14_to_15.sh") . | quote }}
+{{- end }}

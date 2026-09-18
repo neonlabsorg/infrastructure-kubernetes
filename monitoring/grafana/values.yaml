@@ -3,12 +3,6 @@
 persistence:
   enabled: true
 
-grafana.ini:
-  dataproxy:
-    logging: true
-    timeout: 600
-    keep_alive_seconds: 600
-
 dashboardProviders: 
   dashboardproviders.yaml:
     apiVersion: 1
@@ -36,9 +30,6 @@ datasources:
       url: http://loki.neon-proxy.svc.cluster.local:3100
       access: proxy
       isDefault: false
-      jsonData:
-        timeout: 600
-        maxLines: 0
 
 
 dashboards:
@@ -61,10 +52,7 @@ dashboards:
 
 ingress:
   enabled: false
-  annotations:
-    nginx.ingress.kubernetes.io/proxy-connect-timeout: "360"
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "360"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "360"
+  annotations: {}
   labels: {}
   path: /grafana
   pathType: Prefix

@@ -18,7 +18,6 @@ spec:
   replicas: {{ .Values.proxyCount }}
   selector:
     matchLabels:
-      application-pod: neon-proxy
       {{- include "neon-proxy.selectorLabels" . | nindent 6 }}
   template:
     metadata:
@@ -27,19 +26,19 @@ spec:
         checksum/secret: {{ include (print $.Template.BasePath "/proxy-config.yaml") . | sha256sum }}  
         vault.hashicorp.com/agent-inject: "true"
         vault.hashicorp.com/agent-inject-status: "update"
-        vault.hashicorp.com/role: {{ .Release.Namespace }}
+        vault.hashicorp.com/role: "neon-proxy"
         {{- if eq .Values.ENABLE_SEND_TX_API "YES" }} 
-        vault.hashicorp.com/agent-inject-secret-operator-keys: {{ .Release.Namespace }}/data/proxy
+        vault.hashicorp.com/agent-inject-secret-operator-keys: "neon-proxy/data/proxy"
         vault.hashicorp.com/agent-inject-template-operator-keys: |
-          {{`{{- with secret "`}}{{.Release.Namespace }}{{`/data/proxy" -}}
+          {{`{{- with secret "neon-proxy/data/proxy" -}}
             {{ range $k, $v := .Data.data }}
             {{ $k }}: {{ $v }}
             {{ end }}
           {{- end -}}`}}
         {{- end }}
-        vault.hashicorp.com/agent-inject-secret-proxy-env: {{ .Release.Namespace }}/data/proxy_env
+        vault.hashicorp.com/agent-inject-secret-proxy-env: "neon-proxy/data/proxy_env"
         vault.hashicorp.com/agent-inject-template-proxy-env: |
-          {{`{{- with secret "`}}{{.Release.Namespace }}{{`/data/proxy_env" -}}
+          {{`{{- with secret "neon-proxy/data/proxy_env" -}}
             {{ range $k, $v := .Data.data }}
             export  {{ $k }}={{ $v }}
             {{ end }}
@@ -55,16 +54,14 @@ spec:
       {{- if .Values.onePod.enabled }}
       affinity:
         podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - podAffinityTerm:
-              labelSelector:
-                matchExpressions:
-                - key: app.kubernetes.io/name
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+                - key: "app.kubernetes.io/name"
                   operator: In
                   values:
                   - neon-proxy
-              topologyKey: kubernetes.io/hostname
-            weight: 1
+            topologyKey: "kubernetes.io/hostname"
       {{- end }}
       terminationGracePeriodSeconds: 120               
       containers:
@@ -72,11 +69,6 @@ spec:
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          args:
-            - rm /root/.config/solana/id.json && proxy/run-proxy.sh
-          command:
-            - /bin/sh
-            - -c
           imagePullPolicy: {{ .Values.image.pullPolicy }}
         {{- if .Values.envFrom }}        
           envFrom:
@@ -106,50 +98,6 @@ spec:
               cpu: {{ .Values.resources.limits.cpu }}
               memory: {{ .Values.resources.limits.memory }}
         {{- end }}
-        {{- if .Values.livenessProbe.enabled }}
-        {{- if .Values.livenessProbe.httpGet }}
-          livenessProbe:
-            httpGet:
-              path: /healthz
-              port: exporter
-            initialDelaySeconds: 60
-            periodSeconds: 15
-            timeoutSeconds: 5
-        {{- else }}
-          livenessProbe:
-            exec:
-              command:
-              - /bin/sh
-              - -c
-              - >
-                curl -X POST -H 'Content-Type: application/json' -d '{"jsonrpc":"2.0","method":"eth_gasPrice","params":[],"id":1}' http://localhost:9090 | python3 -c "import sys, json; respond=json.load(sys.stdin); sys.exit(1) if 'error' in respond.keys() else sys.exit(0);"
-            initialDelaySeconds: 60
-            periodSeconds: 15
-            timeoutSeconds: 5
-        {{- end }}
-        {{- end }}
-        {{- if .Values.readinessProbe.enabled }}
-        {{- if .Values.readinessProbe.httpGet }}
-          readinessProbe:
-            httpGet:
-              path: /healthz
-              port: exporter
-            initialDelaySeconds: 5
-            periodSeconds: 5
-            timeoutSeconds: 5
-        {{- else }}
-          readinessProbe:
-            exec:
-              command:
-              - /bin/sh
-              - -c
-              - >
-                curl -X POST -H 'Content-Type: application/json' -d '{"jsonrpc":"2.0","method":"eth_gasPrice","params":[],"id":1}' http://localhost:9090 | python3 -c "import sys, json; respond=json.load(sys.stdin); sys.exit(1) if 'error' in respond.keys() else sys.exit(0);"
-            initialDelaySeconds: 5
-            periodSeconds: 5
-            timeoutSeconds: 5
-        {{- end }}
-        {{- end }}
         {{- if eq .Values.ENABLE_SEND_TX_API "YES" }}
           lifecycle:
             postStart:
@@ -161,14 +109,14 @@ spec:
                 - /bin/sh
                 - -c
                 - >
-                    if ( curl -s localhost:8888/metrics | grep -q '^tx_process_count 0' ) && ( curl -s localhost:8888/metrics | grep -q '^tx_stuck_count 0' ); then
-                      echo "tx_process_count and tx_stuck_count are ZERO";
+                    if curl -s localhost:8888/metrics | grep -q '^tx_in_progress 0'; then
+                      echo "tx_in_progress is ZERO";
                       exit 0;
-                    elif ( curl -s localhost:8888/metrics | grep -Eq '^tx_process_count ([1-9][0-9]*|[1-9])$' ) || ( curl -s localhost:8888/metrics | grep -Eq '^tx_stuck_count ([1-9][0-9]*|[1-9])$' ); then
-                      echo "tx_process_count or tx_stuck_count is HIGHER THAN ZERO";
+                    elif curl -s localhost:8888/metrics | grep -Eq '^tx_in_progress ([1-9][0-9]*|[1-9])$'; then
+                      echo "tx_in_progress is HIGHER THAN ZERO";
                       exit 1;
                     else
-                      echo "tx_in_progress or tx_stuck_count NOT FOUND";
+                      echo "tx_in_progress NOT FOUND";
                       exit 0;
                     fi;  
         {{- end }}

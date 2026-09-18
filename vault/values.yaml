@@ -1,7 +1,6 @@
 injector:
   enabled: true
-  agentDefaults:
-    cpuRequest: "100m"
+
 environment: ""
 
 server:
@@ -14,10 +13,10 @@ server:
   resources:
     requests:
       memory: 256Mi
-      cpu: 500m
+      cpu: 250m
     limits:
       memory: 256Mi
-      cpu: 500m
+      cpu: 250m
 
 
   extraSecretEnvironmentVars:

@@ -1,7 +1,0 @@
-serviceMonitor:
-  enabled: true
-
-config:
-  datasourceSecret:
-    name: postgres-exporter-secret
-    key: url

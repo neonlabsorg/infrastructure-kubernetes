@@ -67,6 +67,7 @@ proxyEnv: {}
 
 solanaUrl: ""
 evm_loader: ""
+minimal_gas_price: ""
 ppsolanaUrl: ""
 
 volumes: 
@@ -80,14 +81,11 @@ volumeMounts:
     mountPath: /root/.config/solana/scripts/get_keys.sh
     subPath: get_keys.sh
   - name: proxy-keys-script
-    mountPath: /opt/proxy/run-proxy.sh
+    mountPath: proxy/run-proxy.sh
     subPath: run-proxy.sh
   - name: proxy-keys-script
     mountPath: /opt/proxy/run-indexer.sh
     subPath: run-indexer.sh
-  - name: proxy-keys-script
-    mountPath: /opt/run-gas-tank.sh
-    subPath: run-gas-tank.sh
 
 workingDir: "/opt"
 
